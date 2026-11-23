@@ -49,13 +49,15 @@ A gate enforces the spec in Claude Code using hooks, and in Codex using `AGENTS.
 ## Quick start
 
 ```bash
-pip install -e .                 # once: installs the `arx` command
-cd examples/text-clustering      # or: arx init my-project --example && cd my-project
-arx                              # what's blocked and what's next
-arx ui                           # the board
+pip install -e .                    # once, in the env you'll run Claude Code from
+
+cd examples/text-clustering && arx ui     # try the example board
+# or start your own:
+mkdir ~/my-research && cd ~/my-research && arx ui   # offers to create an empty board here
 ```
 
-For a new project, also run `git config core.hooksPath .githooks` to turn on the commit-time tamper check.
+`arx` on its own prints what's blocked and what's next. `arx init <dir> --example` creates a copy of the
+example (data included) anywhere you like.
 
 Then, in Claude Code inside that project:
 
@@ -121,6 +123,9 @@ minimum checks per box, and whether the agent may attach suggested answers (off 
 | Blocks `arx approve/unlock` and shell writes to protected files | ✅ PreToolUse hook (pattern match) | ❌ |
 | Approve/unlock need a real TTY | ✅ | ✅ |
 | Tamper detection via file hashes (`arx check --ci`, pre-commit) | ✅ | ✅ |
+
+If `arx` isn't installed in the environment Claude Code runs in, the hooks refuse every edit and shell
+command rather than letting them through unchecked.
 
 The hooks keep a cooperative agent from drifting. They are not a sandbox: a determined process
 could still write files in ways the shell patterns don't catch. Hash-based tamper detection is the

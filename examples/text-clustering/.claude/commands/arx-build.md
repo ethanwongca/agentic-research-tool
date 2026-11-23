@@ -1,12 +1,12 @@
 ---
 description: Implement the next approved box exactly as specified, verify it, and stop. Never redesigns.
 ---
-1. Run `./arx next` and do exactly what it says. If the next stage is DRAFT, READY or BLOCKED, stop and hand
+1. Run `arx next` and do exactly what it says. If the next stage is DRAFT, READY or BLOCKED, stop and hand
    back to the researcher.
-2. For an APPROVED stage: run `./arx scaffold <stage>`, then implement the generated module literally:
-   follow the approach, constraints and `params`. If the spec doesn't settle a choice, STOP, `./arx ask` a
+2. For an APPROVED stage: run `arx scaffold <stage>`, then implement the generated module literally:
+   follow the approach, constraints and `params`. If the spec doesn't settle a choice, STOP, `arx ask` a
    neutral question, and ask the researcher.
-3. Run `./arx verify <stage>`. If it fails, fix **implementation bugs** only. Never change the method to make
+3. Run `arx verify <stage>`. If it fails, fix **implementation bugs** only. Never change the method to make
    the checks pass, and never touch the checks.
 4. If the stage becomes BLOCKED (too many failed attempts), or you believe the specified approach itself
    can't pass the checks, stop and report facts only: which checks fail, the error output, the data you
