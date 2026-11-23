@@ -5,15 +5,6 @@ policy:
   min_constraints: 1
   min_tests: 1
   min_invariants: 1
-stages:
-  - id: first_stage
-    title: First stage
-    kind: custom          # data_processing | embedding | clustering | custom  (kind adds required questions)
-    purpose: ""
-    approach: ""          # HOW. The researcher writes this; the agent may not fill it in.
-    inputs: []            # - {name: texts, from: other_stage.texts, type: "list[str]"}
-    outputs: []           # - {name: texts, type: "list[str]", description: ...}
-    decisions: []         # - {key: seed, question: "Which seed?", answer: 42}
-    constraints: []
-    tests: []             # - {name: ..., input: {...}, expect: "out['x'] == ..."}
-    invariants: []        # - {name: ..., expr: "len(out['x']) > 0"}
+  max_attempts: 3
+  agent_options: false
+stages: []   # add boxes in the flow: arx ui

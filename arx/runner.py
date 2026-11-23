@@ -18,6 +18,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+from .contracts import check_io, coerce_inputs, preview_all
 from .spec import Project, parse_scalar
 from .state import State, now
 
@@ -69,20 +70,8 @@ def call_stage(project: Project, sid: str, inputs: dict, params: dict) -> Any:
         os.chdir(prev)
 
 
-def contract_problems(project: Project, sid: str, out: Any) -> list[str]:
-    if not isinstance(out, dict):
-        return [f"run() must return a dict, got {type(out).__name__}"]
-    probs = []
-    for o in project.stage(sid).get("outputs") or []:
-        name, typ = o.get("name"), str(o.get("type") or "")
-        if name not in out:
-            probs.append(f"missing declared output '{name}'")
-            continue
-        base = typ.split("[", 1)[0].strip().lower()
-        py = TYPE_MAP.get(base)
-        if py is not None and not isinstance(out[name], py):
-            probs.append(f"output '{name}' should be {typ}, got {type(out[name]).__name__}")
-    return probs
+def contract_problems(project: Project, sid: str, out: Any, inputs: dict | None = None) -> list[str]:
+    return check_io(project.stage(sid), inputs, out)
 
 
 def _env(out=None, inp=None, params=None) -> dict:
@@ -172,6 +161,7 @@ def verify(project: Project, state: State, sid: str) -> dict:
             inp = t.get("input") or {}
             if isinstance(inp, str):
                 inp = parse_scalar(inp)
+            inp = coerce_inputs(stage, inp)
             params = {**base_params, **(t.get("params") or {})}
             if t.get("raises"):
                 try:
@@ -181,9 +171,9 @@ def verify(project: Project, state: State, sid: str) -> dict:
                     return ok, f"raised {type(e).__name__}: {e}"
                 return False, f"expected {t['raises']} but nothing was raised"
             out = call_stage(project, sid, inp, params)
-            probs = contract_problems(project, sid, out)
+            probs = contract_problems(project, sid, out, inp)
             if probs:
-                return False, "; ".join(probs)
+                return False, "contract violated:\n- " + "\n- ".join(probs)
             ok = eval(str(t["expect"]), _env(out, inp, params))
             return ok, f"expect: {t['expect']}\n" + "\n".join(f"  out.{k}: {summarize(v)}" for k, v in out.items())
         checks.append(_check(t.get("name", "test"), "test", run_test))
@@ -195,14 +185,14 @@ def verify(project: Project, state: State, sid: str) -> dict:
         inp = real_inputs(project, state, sid)
         real["inp"] = inp
         real["out"] = call_stage(project, sid, inp, base_params)
-        probs = contract_problems(project, sid, real["out"])
-        return (not probs), ("; ".join(probs) if probs else
+        probs = contract_problems(project, sid, real["out"], inp)
+        return (not probs), ("contract violated:\n- " + "\n- ".join(probs) if probs else
                              "\n".join(f"out.{k}: {summarize(v)}" for k, v in real["out"].items()))
     checks.append(_check("contract (real data)", "contract", run_real))
 
     for v in stage.get("invariants") or []:
         def run_inv(v=v):
-            if "out" not in real or contract_problems(project, sid, real["out"]):
+            if "out" not in real or contract_problems(project, sid, real["out"], real["inp"]):
                 return False, "skipped: real-data run failed"
             val = eval(str(v["expr"]), _env(real["out"], real["inp"], base_params))
             return bool(val), f"{v['expr']}  ->  {summarize(val)}"
@@ -210,6 +200,11 @@ def verify(project: Project, state: State, sid: str) -> dict:
 
     passed = all(c["passed"] for c in checks)
     result = {"stage": sid, "at": now(), "spec_hash": project.stage_hash(sid), "passed": passed, "checks": checks}
+    if "out" in real:
+        try:
+            result["preview"] = preview_all(real["out"])
+        except Exception:  # noqa
+            pass
     if not passed:
         state.attempts[sid] = state.attempts.get(sid, 0) + 1
         state.save()
@@ -221,3 +216,27 @@ def verify(project: Project, state: State, sid: str) -> dict:
         cp.parent.mkdir(parents=True, exist_ok=True)
         cp.write_bytes(pickle.dumps({"token": state.lock_token(sid), "out": real["out"]}))
     return result
+
+
+# ---------- try it (researcher sandbox; never locks, never counts as an attempt) ----------
+def try_stage(project: Project, state: State, sid: str, mode: str = "custom", raw_input: Any = None,
+              params_override: dict | None = None) -> dict:
+    stage = project.stage(sid)
+    if not project.module_path(sid).exists():
+        raise StageError(f"'{sid}' has no code yet ({project.stage_files(sid)[0]}); the agent implements it after approval")
+    params = {**project.params(sid), **(params_override or {})}
+    t0 = time.time()
+    try:
+        if mode == "real":
+            inp = real_inputs(project, state, sid, require_verified=False)
+        else:
+            if isinstance(raw_input, str):
+                raw_input = parse_scalar(raw_input) if raw_input.strip() else {}
+            inp = coerce_inputs(stage, raw_input or {})
+        out = call_stage(project, sid, inp, params)
+    except Exception as e:  # noqa
+        return {"ok": False, "error": f"{type(e).__name__}: {e}", "trace": traceback.format_exc(limit=-4),
+                "seconds": round(time.time() - t0, 3)}
+    probs = check_io(stage, inp, out)
+    return {"ok": not probs, "problems": probs, "seconds": round(time.time() - t0, 3),
+            "inputs": preview_all(inp), "outputs": preview_all(out)}

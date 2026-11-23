@@ -3,210 +3,256 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>arx · research board</title>
+<title>arx · research flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f3ef; --panel: #ffffff; --ink: #1c1c1a; --muted: #6b6b66; --line: #e2e1dc; --soft: #ecebe5; --col: #ebeae4;
-    --accent: #3b5bdb; --danger: #c92a2a; --ok: #2b8a3e; --warn: #d9480f;
-    --s-draft: #868e96; --s-ready: #1c7ed6; --s-approved: #7048e8; --s-failing: #e03131; --s-blocked: #c2255c;
-    --s-verified: #2f9e44; --s-stale: #f08c00; --s-tampered: #a61e4d; --s-archived: #adb5bd;
-    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --canvas: #f7f2ea; --dots: #ddd3c4; --panel: #ffffff; --soft: #f4eee5; --soft2: #ece4d8;
+    --ink: #0a3235; --ink2: #24494c; --muted: #6a7f80; --line: #e6ddcf;
+    --pink: #f0529c; --teal: #105257; --mint: #0fcb8c; --warn: #e07a1f; --danger: #d64545;
+    --s-draft: #93a3a4; --s-ready: #2d7fd3; --s-approved: #7a5be0; --s-failing: #e0484f; --s-blocked: #c0306f;
+    --s-verified: #0faa79; --s-stale: #e39b17; --s-tampered: #a3243f; --s-archived: #b8b1a5;
+    --sans: Manrope, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --shadow: 0 1px 2px rgba(10,50,53,.06), 0 6px 20px rgba(10,50,53,.07);
     color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #131312; --panel: #1f1f1d; --ink: #ecebe6; --muted: #9a9993; --line: #30302d; --soft: #282826; --col: #191918; }
+    :root { --canvas: #0b2023; --dots: #1d3a3d; --panel: #102b2e; --soft: #15363a; --soft2: #1b4044;
+      --ink: #f3ede4; --ink2: #d5d0c7; --muted: #8fa5a6; --line: #22474b; --teal: #4fd1bd; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); }
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; background: var(--bg); color: var(--ink); }
-  header { display: flex; align-items: center; gap: 14px; padding: 12px 22px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 16px; margin: 0; font-weight: 650; white-space: nowrap; }
-  header .desc { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tabs { display: flex; background: var(--soft); border-radius: 8px; padding: 2px; }
-  .tabs button { border: none; background: none; padding: 5px 12px; border-radius: 6px; }
-  .tabs button.on { background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
-  main { padding: 16px 22px 40px; }
+  * { box-sizing: border-box; font-variant-ligatures: none; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 14px/1.5 var(--sans); color: var(--ink); background: var(--canvas); overflow: hidden; display: grid; grid-template-rows: 60px 1fr; grid-template-columns: 1fr 500px; }
+  @media (max-width: 1100px) { body { grid-template-columns: 1fr 420px; } }
 
-  /* board */
-  .board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 12px; min-height: calc(100vh - 110px); }
-  .column { background: var(--col); border-radius: 12px; width: 262px; flex: none; display: flex; flex-direction: column; max-height: calc(100vh - 110px); border: 1px solid transparent; }
-  .column.narrow { width: 200px; }
-  .column.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--col)); }
-  .column.nodrop { opacity: .55; }
-  .colhead2 { padding: 12px 14px 6px; }
-  .colhead2 .t { font-weight: 650; display: flex; align-items: center; gap: 8px; }
-  .colhead2 .t .n { color: var(--muted); font-weight: 500; font-size: 12px; }
-  .colhead2 .h { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .cards { padding: 6px 10px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
-  .card2 { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 10px 15px; cursor: pointer; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
-  .card2::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 10px 0 0 10px; background: var(--c); }
-  .card2:hover { border-color: var(--muted); }
-  .card2.dragging { opacity: .4; }
-  .card2 .title { font-weight: 600; padding-right: 18px; }
-  .card2 .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .card2 .line { font-size: 12px; margin-top: 7px; color: var(--c); display: flex; align-items: center; gap: 6px; }
-  .card2 .tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 7px; }
-  .card2 .lock { position: absolute; right: 10px; top: 9px; font-size: 13px; }
-  .bar { height: 4px; background: var(--soft); border-radius: 4px; margin-top: 8px; overflow: hidden; }
-  .bar > i { display: block; height: 100%; background: var(--c); border-radius: 4px; }
-  .addbox { padding: 4px 10px 12px; }
-  .addbox input, .addbox select { margin-bottom: 6px; }
-  .ghostbtn { width: 100%; text-align: left; background: none; border: none; color: var(--muted); padding: 8px 6px; border-radius: 8px; }
-  .ghostbtn:hover { background: var(--soft); color: var(--ink); }
+  /* top bar */
+  .top { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 18px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 4; }
+  .mark { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: -.02em; font-size: 17px; }
+  .mark i { width: 22px; height: 22px; border-radius: 7px; background: conic-gradient(from 210deg, var(--pink), var(--teal), var(--mint), var(--pink)); display: inline-block; }
+  .pname { font-weight: 700; font-size: 15px; }
+  .pdesc { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40ch; }
+  .counts { display: flex; gap: 6px; flex: 1; justify-content: flex-end; flex-wrap: wrap; }
+  .count { font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border-radius: 99px; padding: 2px 9px; }
 
-  /* flow */
-  .canvas { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
-  .canvas svg { display: block; }
-  .node { cursor: pointer; }
-  .node rect.box { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
-  .node.alt rect.box { stroke-dasharray: 5 4; }
-  .node:hover rect.box { stroke: var(--muted); }
-  .node text { fill: var(--ink); font-size: 13px; }
-  .node .sub { fill: var(--muted); font-size: 11px; font-family: var(--mono); }
-  .edge { fill: none; stroke: var(--muted); stroke-width: 1.4; }
-  .edge.alt { stroke-dasharray: 4 4; opacity: .6; }
-  .elabel { fill: var(--muted); font-size: 10.5px; font-family: var(--mono); }
-
-  /* drawer */
-  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.28); z-index: 10; display: none; }
-  .scrim.show { display: block; }
-  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(1180px, 97vw); background: var(--bg); z-index: 11; transform: translateX(100%); transition: transform .18s ease; display: flex; flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,.18); }
-  .drawer.show { transform: none; }
-  .dhead { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
-  .dhead h2 { margin: 0; font-size: 17px; }
-  .dtools { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
-  .dbody { flex: 1; overflow-y: auto; padding: 16px 20px 90px; }
-  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
-  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
-  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
-  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
-
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
-  .card h3 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .card h3 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
-  .card.missing { border-color: var(--warn); box-shadow: inset 3px 0 0 var(--warn); }
-  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
-  input, textarea, select { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; }
-  textarea { resize: vertical; min-height: 60px; }
-  textarea.big { min-height: 120px; }
-  input:focus, textarea:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent); }
-  .field-missing { border-color: var(--warn) !important; background: color-mix(in srgb, var(--warn) 7%, var(--bg)); }
-  .code { font-family: var(--mono); font-size: 12.5px; }
-  .row { display: grid; gap: 8px; align-items: start; margin-bottom: 8px; }
-  .x { background: none !important; border: none !important; color: var(--muted); cursor: pointer; font-size: 16px; padding: 6px !important; }
-  .x:hover { color: var(--danger); }
-  .colhead { display: grid; gap: 8px; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  button { font: inherit; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 7px 12px; cursor: pointer; }
-  button:hover:not(:disabled) { border-color: var(--muted); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button.go { background: var(--ok); color: #fff; border-color: var(--ok); }
+  button { font: 600 13px var(--sans); color: var(--ink); background: var(--panel); border: 1.5px solid var(--line); border-radius: 99px; padding: 6px 14px; cursor: pointer; transition: border-color .12s, background .12s; }
+  button:hover:not(:disabled) { border-color: var(--ink); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.dark { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  button.pink { background: var(--pink); color: #fff; border-color: var(--pink); }
+  button.mint { background: var(--mint); color: #05302a; border-color: var(--mint); }
+  button.ghost { border-color: transparent; background: transparent; }
+  button.ghost:hover { background: var(--soft); border-color: transparent; }
+  button.sm { padding: 3px 10px; font-size: 12px; }
   button.danger { color: var(--danger); }
-  button.small { padding: 4px 10px; font-size: 12.5px; }
-  .decision { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-bottom: 10px; background: var(--bg); }
-  .decision.open { border-color: var(--warn); }
-  .decision .q { font-weight: 550; display: flex; gap: 8px; align-items: baseline; }
-  .decision .q .key { font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
-  .badge { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 99px; background: var(--soft); color: var(--muted); white-space: nowrap; }
-  .badge.agent { background: color-mix(in srgb, var(--s-approved) 15%, transparent); color: var(--s-approved); }
-  .badge.req { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
-  .badge.alt { background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--accent); }
+
+  /* canvas */
+  .stage { position: relative; overflow: hidden; background-color: var(--canvas); background-image: radial-gradient(var(--dots) 1.2px, transparent 1.2px); background-size: 22px 22px; cursor: grab; }
+  .stage.panning { cursor: grabbing; }
+  .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  svg.edges { position: absolute; left: 0; top: 0; overflow: visible; width: 1px; height: 1px; }
+  .edge { fill: none; stroke: var(--ink2); stroke-width: 2; opacity: .55; }
+  .edge.dep { stroke-dasharray: 5 5; }
+  .edge.temp { stroke: var(--pink); opacity: 1; stroke-dasharray: 6 4; }
+  .edge-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
+  .edge-hit:hover + .edge, .edge.hl { stroke: var(--pink); opacity: 1; }
+  .elabel { font: 500 10.5px var(--mono); fill: var(--muted); }
+
+  .node { position: absolute; width: 260px; background: var(--panel); border-radius: 16px; box-shadow: var(--shadow); border: 1.5px solid var(--line); user-select: none; }
+  .node.sel { border-color: var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--pink) 25%, transparent), var(--shadow); }
+  .node.alt { border-style: dashed; }
+  .node.drop { border-color: var(--pink); box-shadow: 0 0 0 5px color-mix(in srgb, var(--pink) 30%, transparent); }
+  .nhead { height: 66px; padding: 12px 14px 0 16px; cursor: move; position: relative; border-radius: 16px 16px 0 0; }
+  .nhead::before { content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 4px; border-radius: 0 0 4px 4px; background: var(--c); }
+  .ntitle { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 22px; }
+  .nsub { display: flex; gap: 6px; align-items: center; margin-top: 5px; }
+  .kchip { font: 500 10.5px var(--mono); color: var(--muted); background: var(--soft); border-radius: 6px; padding: 1px 6px; }
+  .spill { font-size: 11px; font-weight: 700; color: var(--c); display: inline-flex; align-items: center; gap: 5px; }
+  .spill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+  .nlock { position: absolute; right: 12px; top: 12px; font-size: 13px; }
+  .nports { padding: 6px 0; border-top: 1px solid var(--line); }
+  .port { height: 28px; display: flex; align-items: center; gap: 7px; padding: 0 14px; font-size: 12.5px; position: relative; }
+  .port.out { justify-content: flex-end; }
+  .port .pn { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .port .pt { font: 500 10.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+  .port .dot { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--panel); border: 2.5px solid var(--ink2); top: 7.5px; }
+  .port.in .dot { left: -7.5px; }
+  .port.out .dot { right: -7.5px; cursor: crosshair; border-color: var(--teal); }
+  .port.out .dot:hover { background: var(--pink); border-color: var(--pink); transform: scale(1.25); }
+  .port.none { color: var(--muted); font-style: italic; font-size: 12px; }
+  .nfoot { height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .nfoot b { color: var(--c); font-weight: 700; }
+  .nfoot .bar { flex: 1; height: 4px; border-radius: 4px; background: var(--soft2); overflow: hidden; }
+  .nfoot .bar i { display: block; height: 100%; background: var(--c); }
+
+  .hud { position: absolute; left: 16px; bottom: 16px; display: flex; gap: 8px; align-items: center; }
+  .hud .tip { background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; font-size: 12px; color: var(--muted); box-shadow: var(--shadow); }
+  .zoom { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; box-shadow: var(--shadow); }
+  .zoom button { border: none; padding: 5px 11px; background: none; }
+  .zoom span { font: 500 12px var(--mono); padding: 6px 4px; min-width: 44px; text-align: center; }
+  .empty-canvas { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  .empty-canvas div { text-align: center; color: var(--muted); pointer-events: auto; }
+  .empty-canvas h2 { color: var(--ink); margin: 0 0 6px; font-size: 22px; letter-spacing: -.02em; }
+
+  /* inspector */
+  .insp { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; z-index: 3; }
+  .ihead { padding: 18px 22px 12px; }
+  .ihead .row1 { display: flex; align-items: center; gap: 8px; }
+  .ihead h1 { margin: 6px 0 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
+  .ihead .sid { font: 500 12px var(--mono); color: var(--muted); }
+  .gate { margin: 0 22px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--c) 9%, var(--panel)); border: 1px solid color-mix(in srgb, var(--c) 30%, var(--line)); }
+  .gate .gt { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--c); }
+  .gate .gt::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .gate p { margin: 4px 0 0; color: var(--ink2); font-size: 13px; }
+  .gate ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink2); max-height: 150px; overflow: auto; }
+  .gate .acts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .nextopts { display: grid; gap: 6px; margin-top: 12px; }
+  .nextopts button { text-align: left; border-radius: 12px; padding: 9px 12px; font-weight: 700; }
+  .nextopts button span { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+  .tabs { display: flex; gap: 2px; padding: 14px 22px 0; border-bottom: 1px solid var(--line); }
+  .tabs button { border: none; border-radius: 0; background: none; padding: 8px 12px 10px; color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1px; }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--pink); }
+  .tabs .badge { font-size: 10.5px; background: var(--warn); color: #fff; border-radius: 99px; padding: 0 6px; margin-left: 4px; }
+  .ibody { flex: 1; overflow-y: auto; padding: 16px 22px 100px; }
+  .savebar { display: none; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 22px; border-top: 1px solid var(--line); background: var(--panel); }
+  .savebar.show { display: flex; }
+
+  .sec { margin-bottom: 22px; }
+  .sec > h3 { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+  .sec > h3 .h { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .sec.missing > h3 { color: var(--warn); }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea, select { width: 100%; font: 500 13.5px var(--sans); color: var(--ink); background: var(--soft); border: 1.5px solid transparent; border-radius: 10px; padding: 7px 10px; }
+  input[type=checkbox] { width: auto; accent-color: var(--pink); }
+  textarea { resize: vertical; min-height: 64px; }
+  textarea.big { min-height: 130px; }
+  .mono, .code { font-family: var(--mono) !important; font-size: 12.5px !important; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--ink); background: var(--panel); }
+  .miss { border-color: var(--warn) !important; background: color-mix(in srgb, var(--warn) 8%, var(--soft)) !important; }
+  .help { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+  .card { border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .card.open { border-color: color-mix(in srgb, var(--warn) 70%, var(--line)); }
+  .card .ch { display: flex; gap: 8px; align-items: center; }
+  .x { border: none !important; background: none !important; color: var(--muted); padding: 2px 6px !important; font-size: 16px; }
+  .x:hover { color: var(--danger); }
+  .tag { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+  .tag.agent { background: color-mix(in srgb, var(--s-approved) 15%, transparent); color: var(--s-approved); }
+  .tag.req { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+  .tag.pink { background: color-mix(in srgb, var(--pink) 15%, transparent); color: var(--pink); }
+  .key { font: 500 11.5px var(--mono); color: var(--teal); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .chk { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink2); margin: 0; }
+  .coltable { display: grid; grid-template-columns: 1.3fr 1fr auto auto 24px; gap: 6px; align-items: center; margin-top: 6px; }
+  .coltable .hd { font-size: 11px; color: var(--muted); font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .chip { font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px dashed var(--muted); cursor: pointer; background: none; }
-  .chip:hover { border-style: solid; border-color: var(--accent); color: var(--accent); }
-  .status { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 650; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; }
-  .explain { color: var(--muted); margin: 6px 0 12px; }
-  ul.reasons { margin: 0; padding-left: 18px; }
-  ul.reasons li { margin: 3px 0; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-  .next { display: grid; gap: 8px; }
-  .next button { text-align: left; padding: 10px 12px; }
-  .next button b { display: block; }
-  .next button span { color: var(--muted); font-size: 12px; }
-  .check { border-top: 1px solid var(--line); padding: 8px 0; }
-  .check summary { cursor: pointer; display: flex; gap: 8px; align-items: center; list-style: none; }
+  .chip { font-size: 12px; padding: 2px 10px; border-radius: 99px; border: 1.5px dashed var(--muted); background: none; }
+  .check { border-top: 1px solid var(--line); padding: 7px 0; }
+  .check summary { cursor: pointer; display: flex; gap: 8px; align-items: center; list-style: none; font-weight: 600; }
   .check summary::-webkit-details-marker { display: none; }
-  .check .pf { font-weight: 700; font-size: 11px; width: 38px; }
-  .pf.pass { color: var(--ok); } .pf.fail { color: var(--danger); }
-  .check pre { white-space: pre-wrap; font-family: var(--mono); font-size: 11.5px; background: var(--bg); padding: 8px; border-radius: 6px; margin: 6px 0 0; max-height: 260px; overflow: auto; }
-  .kind { font-size: 10.5px; color: var(--muted); font-family: var(--mono); }
-  .arts img { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); margin-top: 8px; }
-  .savebar { position: absolute; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 10px 20px; display: flex; gap: 12px; align-items: center; justify-content: flex-end; transform: translateY(100%); transition: transform .15s; }
-  .savebar.show { transform: none; }
-  .toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); max-width: 520px; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 8px; white-space: pre-wrap; z-index: 30; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
-  .toast.show { opacity: 1; }
-  .toast.err { background: var(--danger); color: #fff; }
-  .empty { color: var(--muted); font-style: italic; font-size: 13px; }
+  .pf { font: 700 10.5px var(--mono); width: 36px; }
+  .pf.pass { color: var(--s-verified); } .pf.fail { color: var(--danger); }
+  pre { white-space: pre-wrap; font: 11.5px/1.5 var(--mono); background: var(--soft); padding: 9px 11px; border-radius: 10px; margin: 6px 0 0; max-height: 280px; overflow: auto; }
+  .kind { font: 500 10.5px var(--mono); color: var(--muted); }
+
+  /* previews */
+  .pv { border: 1.5px solid var(--line); border-radius: 12px; margin-top: 8px; overflow: hidden; }
+  .pv .pvh { display: flex; gap: 8px; align-items: baseline; padding: 8px 12px; background: var(--soft); font-weight: 700; }
+  .pv .pvh .kind { font-weight: 500; }
+  .pv .pvb { padding: 8px 12px; overflow: auto; max-height: 300px; }
+  table.t { border-collapse: collapse; font: 12px var(--mono); width: 100%; }
+  table.t th { text-align: left; position: sticky; top: 0; background: var(--panel); border-bottom: 1.5px solid var(--line); padding: 4px 8px; white-space: nowrap; }
+  table.t th small { display: block; color: var(--muted); font-weight: 400; }
+  table.t td { border-bottom: 1px solid var(--line); padding: 3px 8px; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+  .stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .stats span { font: 500 11.5px var(--mono); background: var(--soft); border-radius: 6px; padding: 1px 7px; }
+  .hbar { display: grid; grid-template-columns: 50px 1fr 40px; gap: 6px; align-items: center; font: 11.5px var(--mono); margin: 2px 0; }
+  .hbar i { display: block; height: 10px; border-radius: 4px; background: var(--teal); }
+  .problems { border: 1.5px solid var(--danger); background: color-mix(in srgb, var(--danger) 7%, var(--panel)); border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
+  .problems b { color: var(--danger); }
+  .okbox { border: 1.5px solid var(--s-verified); background: color-mix(in srgb, var(--s-verified) 8%, var(--panel)); border-radius: 12px; padding: 8px 14px; margin-top: 10px; font-weight: 700; color: var(--s-verified); }
+  .seg { display: inline-flex; background: var(--soft); border-radius: 99px; padding: 3px; }
+  .seg button { border: none; background: none; padding: 4px 12px; }
+  .seg button.on { background: var(--panel); box-shadow: var(--shadow); }
+  .arts img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin-top: 6px; }
+  .toast { position: fixed; top: 72px; left: calc(50% - 250px); transform: translateX(-50%); max-width: 560px; background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 12px; white-space: pre-wrap; z-index: 50; font-weight: 600; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; box-shadow: var(--shadow); }
+  .toast.show { opacity: 1; } .toast.err { background: var(--danger); color: #fff; }
+  dialog { border: none; border-radius: 18px; background: var(--panel); color: var(--ink); padding: 22px 24px; width: 440px; box-shadow: var(--shadow); }
+  dialog::backdrop { background: rgba(10,50,53,.3); }
   .muted { color: var(--muted); }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .help { font-size: 12px; color: var(--muted); margin: -4px 0 8px; }
-  dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 20px 22px; width: 420px; }
-  dialog::backdrop { background: rgba(0,0,0,.3); }
-  .cb { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
-  .cb input { width: auto; }
+  .overview .st { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .overview .st:hover .t { color: var(--pink); }
+  .overview .st .d { width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-top: 6px; flex: none; }
+  .overview .st .t { font-weight: 700; }
+  .overview .st .r { font-size: 12.5px; color: var(--muted); }
 </style>
 </head>
 <body>
-<header>
-  <h1 id="pname">arx</h1>
-  <div class="desc" id="pdesc"></div>
-  <div class="tabs"><button id="tab-board" class="on" onclick="setView('board')">Board</button><button id="tab-flow" onclick="setView('flow')">Flow</button></div>
-  <button class="small" onclick="openRules()">Rules</button>
+<header class="top">
+  <div class="mark"><i></i>arx</div>
+  <div class="pname" id="pname"></div>
+  <div class="pdesc" id="pdesc"></div>
+  <div class="counts" id="counts"></div>
+  <button class="dark" onclick="addBoxCenter()">＋ Box</button>
+  <button onclick="tidy()" title="Arrange boxes left to right">Tidy</button>
+  <button onclick="fit()">Fit</button>
+  <button onclick="openRules()">Rules</button>
 </header>
-<main>
-  <div id="board" class="board"></div>
-  <div id="flow" class="canvas" style="display:none"><svg id="dag"></svg></div>
-</main>
 
-<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
-<aside class="drawer" id="drawer">
-  <div class="dhead"><h2 id="d-title"></h2><span id="d-pill"></span><span style="flex:1"></span><button class="small" onclick="closeDrawer()">Close ✕</button></div>
-  <div class="dtools" id="d-tools"></div>
-  <div class="dbody"><div class="grid"><div id="editor"></div><div id="gate"></div></div></div>
-  <div class="savebar" id="savebar"><span class="muted">Unsaved changes to this box.</span>
-    <button onclick="discard()">Discard</button><button class="primary" onclick="save()">Save box</button></div>
+<div class="stage" id="stage">
+  <div class="world" id="world"><svg class="edges" id="edges"></svg><div id="nodes"></div></div>
+  <div class="empty-canvas" id="emptyc" style="display:none"><div><h2>Start your pipeline</h2><p>Double-click anywhere to add your first box,<br>or use <b>＋ Box</b> up top.</p></div></div>
+  <div class="hud"><div class="zoom"><button onclick="zoomBy(1/1.2)">−</button><span id="zl">100%</span><button onclick="zoomBy(1.2)">+</button></div>
+    <div class="tip">Double-click to add a box · drag a <b style="color:var(--teal)">●</b> output onto a box to connect · click an arrow to remove it</div>
+    <label class="chk" style="background:var(--panel);border-radius:99px;padding:5px 12px;box-shadow:var(--shadow)"><input type="checkbox" id="showArch" onchange="render()"> archived</label></div>
+</div>
+
+<aside class="insp" id="insp">
+  <div id="ihead"></div>
+  <div id="gate"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="ibody" id="ibody"></div>
+  <div class="savebar" id="savebar"><span class="muted" style="flex:1">Unsaved changes</span><button onclick="discard()">Discard</button><button class="dark" onclick="save()">Save box</button></div>
 </aside>
 
 <dialog id="rules">
-  <h3 style="margin:0 0 4px">Rules for this board</h3>
-  <p class="help" style="margin:0 0 6px">These apply to every box. The agent can't change them.</p>
-  <label>Failed verify attempts before a box goes to “Needs you”</label><input id="r-max" type="number" min="1">
-  <div class="two"><div><label>Min test cases</label><input id="r-tests" type="number" min="0"></div><div><label>Min invariants</label><input id="r-inv" type="number" min="0"></div></div>
-  <label>Min constraints</label><input id="r-con" type="number" min="0">
-  <label class="cb"><input id="r-opts" type="checkbox"> Let the agent attach suggested answers to its questions</label>
-  <p class="help" style="margin-top:6px">Off by default: the agent may only ask neutral questions, so every idea comes from you.</p>
-  <div class="actions" style="justify-content:flex-end"><button onclick="rules.close()">Cancel</button><button class="primary" onclick="saveRules()">Save</button></div>
+  <h2 style="margin:0 0 4px;font-size:20px">Rules</h2>
+  <p class="help">Apply to every box. Only you can change them.</p>
+  <label>Failed check runs before a box is handed back to you</label><input id="r-max" type="number" min="1">
+  <div class="grid3"><div><label>Min tests</label><input id="r-tests" type="number" min="0"></div><div><label>Min invariants</label><input id="r-inv" type="number" min="0"></div><div><label>Min constraints</label><input id="r-con" type="number" min="0"></div></div>
+  <label class="chk" style="margin-top:14px"><input id="r-strict" type="checkbox"> Strict contracts: dataframes must list columns, arrays dtype + shape, lists item type</label>
+  <label class="chk" style="margin-top:10px"><input id="r-opts" type="checkbox"> Let the agent attach suggested answers to its questions</label>
+  <p class="help" style="margin-top:4px">Off by default, so every idea comes from you.</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button onclick="rules.close()">Cancel</button><button class="dark" onclick="saveRules()">Save</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
 
 <script>
+/* ================= state ================= */
 const STATUS = {
-  draft:    { c: "var(--s-draft)",    label: "Spec",     explain: "This box still has gaps. The agent can't write any code for it until every item below is filled in." },
-  ready:    { c: "var(--s-ready)",    label: "Ready",    explain: "The spec is complete. Approve it (or drag the card to Building) to let the agent implement it exactly as written." },
+  draft:    { c: "var(--s-draft)",    label: "Spec",     explain: "This box has gaps. The agent can't write any code for it until you fill them in." },
+  ready:    { c: "var(--s-ready)",    label: "Ready",    explain: "The spec is complete. Approve it so the agent can implement it exactly as written." },
   approved: { c: "var(--s-approved)", label: "Building", explain: "The agent is implementing this box. It's done when every check passes." },
-  failing:  { c: "var(--s-failing)",  label: "Failing",  explain: "Checks fail. The agent may fix implementation bugs, but not change your method or the checks." },
-  blocked:  { c: "var(--s-blocked)",  label: "Blocked",  explain: "Failed too many times. The agent has stopped and won't change course on its own. You decide what's next." },
+  failing:  { c: "var(--s-failing)",  label: "Failing",  explain: "Checks fail. The agent may fix implementation bugs, but not change your method or your checks." },
+  blocked:  { c: "var(--s-blocked)",  label: "Needs you", explain: "Failed too many times. The agent has stopped. You decide what's next." },
   verified: { c: "var(--s-verified)", label: "Verified", explain: "All checks pass. The code is locked, so the agent can't modify it." },
-  stale:    { c: "var(--s-stale)",    label: "Stale",    explain: "Was verified, but this box's spec or an upstream box changed. Re-run the checks." },
-  tampered: { c: "var(--s-tampered)", label: "Tampered", explain: "Locked code changed after verification. Review the diff, then restore it or unlock." },
+  stale:    { c: "var(--s-stale)",    label: "Stale",    explain: "Was verified, but this box or an upstream box changed. Re-run the checks." },
+  tampered: { c: "var(--s-tampered)", label: "Tampered", explain: "Locked code changed after verification. Review it, then restore the file or unlock." },
   archived: { c: "var(--s-archived)", label: "Archived", explain: "Removed from the pipeline and kept for reference." },
 };
-const COLUMNS = [
-  { key: "spec",     title: "Spec",      hint: "you define the box",              st: ["draft"] },
-  { key: "approve",  title: "Approve",   hint: "complete, waiting for your OK",   st: ["ready"] },
-  { key: "building", title: "Building",  hint: "agent implements, checks run",    st: ["approved", "failing"] },
-  { key: "needs",    title: "Needs you", hint: "failed or changed: your call",    st: ["blocked", "stale", "tampered"] },
-  { key: "verified", title: "Verified",  hint: "checks pass, code locked 🔒",      st: ["verified"] },
-  { key: "archived", title: "Archived",  hint: "retired boxes",                   st: ["archived"], narrow: true },
-];
-let S = null, sel = null, draft = null, dirty = false, view = "board", dragId = null;
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const clone = (o) => JSON.parse(JSON.stringify(o));
-const toYaml = (v) => (v === undefined || v === null || (typeof v === "object" && !Object.keys(v).length)) ? "" : JSON.stringify(v);
-const byId = (id) => S.stages.find(s => s.id === id);
+const W = 260, HEAD = 66, PAD = 6, ROW = 28, FOOT = 34;
+let S = null, sel = null, draft = null, dirty = false, tab = "spec";
+let view = JSON.parse(localStorage.getItem("arx.view") || '{"x":40,"y":40,"z":1}');
+let pos = {}, drag = null, tryState = {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clone = o => JSON.parse(JSON.stringify(o ?? null));
+const byId = id => S?.stages.find(s => s.id === id);
+const isOpen = d => d.answer === null || d.answer === undefined || String(d.answer).trim() === "";
+const jsonish = v => (v === undefined || v === null || (typeof v === "object" && !Object.keys(v).length)) ? "" : JSON.stringify(v);
 
-function toast(msg, err) { const t = $("toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : ""); clearTimeout(t._h); t._h = setTimeout(() => t.className = "toast", err ? 6500 : 2400); }
+function toast(m, err) { const t = $("toast"); t.textContent = m; t.className = "toast show" + (err ? " err" : ""); clearTimeout(t._h); t._h = setTimeout(() => t.className = "toast", err ? 7000 : 2400); }
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
@@ -214,330 +260,497 @@ async function api(path, body) {
   return j;
 }
 async function load(poll) {
-  try { S = await api("/api/state"); } catch (e) { toast(e.message, true); return; }
+  try { S = await api("/api/state"); } catch (e) { if (!poll) toast(e.message, true); return; }
   $("pname").textContent = S.pipeline.name || "pipeline";
   $("pdesc").textContent = S.pipeline.description || "";
-  if (sel && !byId(sel)) closeDrawer();
-  if (!(poll && $("nb-title"))) drawBoard();
-  drawDag();
-  if (sel) {
-    const st = byId(sel), sig = JSON.stringify(st.spec) + JSON.stringify(st.decisions);
-    if (!poll || (!dirty && sig !== load._sig)) fillDrawer(true);
-    else drawGate();
-    load._sig = sig;
-  }
-}
-function setView(v) { view = v; $("board").style.display = v === "board" ? "" : "none"; $("flow").style.display = v === "flow" ? "" : "none"; $("tab-board").classList.toggle("on", v === "board"); $("tab-flow").classList.toggle("on", v === "flow"); }
-
-/* ---------------- board ---------------- */
-function cardLine(s) {
-  const m = STATUS[s.status];
-  if (s.status === "draft") return `${s.reasons.length} open item${s.reasons.length === 1 ? "" : "s"}`;
-  if (s.status === "failing") return `failing · attempt ${s.attempts} of ${S.policy.max_attempts}`;
-  if (s.status === "blocked") return `blocked after ${s.attempts} attempts · your decision`;
-  if (s.status === "approved") return s.files_exist.length ? "agent implementing" : "waiting for agent";
-  return m.label;
-}
-function completeness(s) {
-  const total = 6 + s.decisions.length;
-  const open = s.issues.length;
-  return Math.max(0, Math.min(1, (total - open) / total));
-}
-function drawBoard() {
-  const b = $("board");
-  b.innerHTML = COLUMNS.map(col => {
-    const cards = S.stages.filter(s => col.st.includes(s.status));
-    if (col.key === "archived" && !cards.length) return "";
-    return `<section class="column ${col.narrow ? "narrow" : ""}" data-col="${col.key}">
-      <div class="colhead2"><div class="t">${col.title} <span class="n">${cards.length}</span></div><div class="h">${col.hint}</div></div>
-      <div class="cards">${cards.map(cardHtml).join("")}</div>
-      ${col.key === "spec" ? addBoxHtml() : ""}
-    </section>`;
-  }).join("");
-  b.querySelectorAll(".card2").forEach(el => {
-    el.addEventListener("click", () => openDrawer(el.dataset.id));
-    el.addEventListener("dragstart", e => { dragId = el.dataset.id; el.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; markDrops(); });
-    el.addEventListener("dragend", () => { el.classList.remove("dragging"); dragId = null; clearDrops(); });
-  });
-  b.querySelectorAll(".column").forEach(col => {
-    col.addEventListener("dragover", e => { if (dragId) { e.preventDefault(); col.classList.add("over"); } });
-    col.addEventListener("dragleave", () => col.classList.remove("over"));
-    col.addEventListener("drop", e => { e.preventDefault(); col.classList.remove("over"); if (dragId) dropOn(dragId, col.dataset.col); });
-  });
-}
-function cardHtml(s) {
-  const m = STATUS[s.status], sp = s.spec;
-  const deps = s.deps.length ? `← ${s.deps.join(", ")}` : "first box";
-  const tags = [];
-  if (sp.variant_of) tags.push(`<span class="badge alt">alternative to ${esc(sp.variant_of)}</span>`);
-  if (s.variants.length) tags.push(`<span class="badge alt">${s.variants.length} alternative${s.variants.length > 1 ? "s" : ""}</span>`);
-  if (s.decisions.some(d => d.asked_by === "agent" && (d.answer === null || d.answer === ""))) tags.push(`<span class="badge agent">agent has a question</span>`);
-  return `<article class="card2" draggable="true" data-id="${s.id}" style="--c:${m.c}">
-    ${["verified","stale"].includes(s.status) ? `<span class="lock">🔒</span>` : ""}
-    <div class="title">${esc(sp.title || s.id)}</div>
-    <div class="meta">${esc(s.id)} · ${esc(sp.kind || "custom")} · ${esc(deps)}</div>
-    <div class="line">● ${esc(cardLine(s))}</div>
-    ${s.status === "draft" ? `<div class="bar"><i style="width:${Math.round(completeness(s) * 100)}%"></i></div>` : ""}
-    ${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}
-  </article>`;
-}
-function addBoxHtml() {
-  return `<div class="addbox" id="addbox"><button class="ghostbtn" onclick="showAdd()">+ Add a box</button></div>`;
-}
-function showAdd() {
-  $("addbox").innerHTML = `<input id="nb-title" placeholder="What is this step? e.g. Evaluate clusters">
-    <select id="nb-kind">${Object.keys(S.kinds).map(k => `<option>${k}</option>`).join("")}</select>
-    <div style="display:flex;gap:6px"><button class="primary small" onclick="createBox()">Add box</button><button class="small" onclick="drawBoard()">Cancel</button></div>`;
-  $("nb-title").focus();
-  $("nb-title").addEventListener("keydown", e => { if (e.key === "Enter") createBox(); if (e.key === "Escape") drawBoard(); });
-}
-async function createBox() {
-  const title = $("nb-title").value.trim(); if (!title) return;
-  try { const r = await api("/api/stages", { title, kind: $("nb-kind").value }); await load(); openDrawer(r.id); } catch (e) { toast(e.message, true); }
+  const n = {}; S.stages.forEach(s => n[s.status] = (n[s.status] || 0) + 1);
+  $("counts").innerHTML = Object.entries(STATUS).filter(([k]) => n[k]).map(([k, m]) => `<span class="count" style="--c:${m.c}">${n[k]} ${m.label.toLowerCase()}</span>`).join("");
+  if (!drag) render();
+  if (sel && !byId(sel)) select(null);
+  const st = sel && byId(sel);
+  const sig = st ? JSON.stringify([st.spec, st.decisions]) : "";
+  const rsig = st ? JSON.stringify([st.status, st.result?.at, st.reasons, st.artifacts]) : JSON.stringify(S.stages.map(s => [s.id, s.status]));
+  if (!poll || (!dirty && sig !== load._sig)) renderInspector(true);
+  else if (rsig !== load._rsig) { renderHead(); renderGate(); if (tab === "checks" && !dirty) renderTab(); if (!sel) renderTab(); }
+  load._sig = sig; load._rsig = rsig;
 }
 
-/* drag transitions: only moves that are a real decision are allowed */
-function transition(s, col) {
-  if (col === "archived" && s.status !== "archived") return { action: "archive", ask: `Archive “${s.spec.title}”? It leaves the pipeline but is kept for reference.` };
-  if (col === "spec" && s.status === "archived") return { action: "restore" };
-  if (col === "building" && s.status === "ready") return { action: "approve" };
-  if (col === "building" && ["verified", "stale", "tampered"].includes(s.status)) return { action: "unlock", ask: `Unlock “${s.spec.title}”? The agent will be able to edit its code again, and downstream boxes go stale.` };
-  if (col === "building" && s.status === "blocked") return { action: "retry", ask: `Give the agent ${S.policy.max_attempts} more attempts at “${s.spec.title}” with the same spec?` };
-  if (col === "verified") return { err: "Boxes reach Verified only when their checks pass." };
-  if (col === "approve") return { err: "A box moves to Approve automatically once its spec has no open items." };
-  return null;
-}
-function markDrops() { const s = byId(dragId); document.querySelectorAll(".column").forEach(c => { const t = transition(s, c.dataset.col); if (!t || t.err) c.classList.add("nodrop"); }); }
-function clearDrops() { document.querySelectorAll(".column").forEach(c => c.classList.remove("nodrop", "over")); }
-async function dropOn(id, col) {
-  const s = byId(id), t = transition(s, col);
-  if (!t) return; if (t.err) return toast(t.err, true);
-  if (t.action === "approve") { sel = id; return act("approve"); }
-  if (t.ask && !confirm(t.ask)) return;
-  try { await api(`/api/${t.action}/${id}`, {}); toast({ archive: "Archived", restore: "Restored to Spec", unlock: "Unlocked", retry: "More attempts granted" }[t.action]); await load(); } catch (e) { toast(e.message, true); }
-}
-
-/* ---------------- flow ---------------- */
-function drawDag() {
-  const svg = $("dag"); const active = S.stages.filter(s => s.status !== "archived");
-  const map = Object.fromEntries(active.map(s => [s.id, s])); const depth = {};
+/* ================= canvas ================= */
+function layoutDefaults() {
+  const act = S.stages.filter(s => s.status !== "archived");
+  const map = Object.fromEntries(act.map(s => [s.id, s])), depth = {};
   const d = (id, seen = new Set()) => { if (depth[id] !== undefined) return depth[id]; if (seen.has(id)) return 0; seen.add(id);
     const ds = (map[id]?.deps || []).filter(x => map[x]); return depth[id] = ds.length ? 1 + Math.max(...ds.map(x => d(x, seen))) : 0; };
-  active.forEach(s => d(s.id));
-  const layers = {}; active.forEach(s => (layers[depth[s.id]] ||= []).push(s.id));
-  const W = 210, H = 84, GX = 90, GY = 26, PAD = 28, pos = {};
-  Object.entries(layers).forEach(([l, ids]) => ids.forEach((id, i) => pos[id] = { x: PAD + l * (W + GX), y: PAD + i * (H + GY) }));
-  const maxL = Math.max(0, ...Object.keys(layers).map(Number)), maxN = Math.max(1, ...Object.values(layers).map(a => a.length));
-  svg.setAttribute("width", Math.max(PAD * 2 + (maxL + 1) * W + maxL * GX, 600)); svg.setAttribute("height", PAD * 2 + maxN * H + (maxN - 1) * GY);
-  let h = `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>`;
-  for (const s of active) for (const dep of s.deps) {
-    if (!pos[dep]) continue; const a = pos[dep], b = pos[s.id];
-    const x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x - 2, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
-    const names = (s.spec.inputs || []).filter(i => String(i.from || "").startsWith(dep + ".")).map(i => i.from.split(".")[1]).join(", ");
-    h += `<path class="edge ${s.spec.variant_of ? "alt" : ""}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" marker-end="url(#arr)"/>`;
-    if (names) h += `<text class="elabel" x="${mx}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle">${esc(names)}</text>`;
+  const lanes = {};
+  S.stages.forEach(s => { const l = s.status === "archived" ? 0 : d(s.id); lanes[l] = (lanes[l] || 0) + 1; s._auto = { x: 60 + l * 360, y: 80 + (lanes[l] - 1) * 260 }; });
+}
+const P = s => pos[s.id] || s.spec.ui || s._auto;
+const visible = () => S.stages.filter(s => s.status !== "archived" || $("showArch").checked);
+function nodeH(s) { const n = (s.spec.inputs || []).length + (s.spec.outputs || []).length; return HEAD + PAD * 2 + Math.max(1, n) * ROW + FOOT; }
+function inPort(s, name) { const i = (s.spec.inputs || []).findIndex(x => x.name === name), p = P(s); return { x: p.x, y: p.y + HEAD + PAD + i * ROW + ROW / 2 }; }
+function outPort(s, name) { const nIn = (s.spec.inputs || []).length, j = (s.spec.outputs || []).findIndex(x => x.name === name), p = P(s); return { x: p.x + W, y: p.y + HEAD + PAD + (nIn + j) * ROW + ROW / 2 }; }
+const curve = (a, b) => { const dx = Math.max(60, Math.abs(b.x - a.x) / 2); return `M${a.x},${a.y} C${a.x + dx},${a.y} ${b.x - dx},${b.y} ${b.x},${b.y}`; };
+
+function footLine(s) {
+  if (s.status === "draft") return `<b>${s.reasons.length} open</b><span class="bar"><i style="width:${Math.round(100 * Math.max(0, 1 - s.issues.length / (6 + s.decisions.length)))}%"></i></span>`;
+  if (s.status === "failing") return `<b>failing</b> · attempt ${s.attempts}/${S.policy.max_attempts}`;
+  if (s.status === "blocked") return `<b>blocked</b> · your decision`;
+  if (s.status === "approved") return `<b>${s.files_exist.length ? "agent implementing" : "waiting for agent"}</b>`;
+  if (s.status === "verified") return `<b>verified</b> · ${s.result?.checks?.length || 0} checks pass`;
+  if (s.status === "ready") return `<b>ready</b> · needs your approval`;
+  return `<b>${STATUS[s.status].label.toLowerCase()}</b>`;
+}
+function render() {
+  if (!S) return;
+  layoutDefaults();
+  const vs = visible(), ids = new Set(vs.map(s => s.id));
+  $("emptyc").style.display = vs.length ? "none" : "";
+  $("nodes").innerHTML = vs.map(s => {
+    const m = STATUS[s.status], sp = s.spec, p = P(s);
+    const ins = (sp.inputs || []).map(i => `<div class="port in"><span class="dot"></span><span class="pn">${esc(i.name)}</span><span class="pt">${esc(i.type || "")}</span></div>`);
+    const outs = (sp.outputs || []).map(o => `<div class="port out"><span class="pt">${esc(o.type || "")}</span><span class="pn">${esc(o.name)}</span><span class="dot" data-out="${esc(s.id)}.${esc(o.name)}" title="drag onto a box to connect"></span></div>`);
+    const rows = ins.concat(outs);
+    return `<div class="node ${s.id === sel ? "sel" : ""} ${sp.variant_of ? "alt" : ""}" data-id="${esc(s.id)}" style="left:${p.x}px;top:${p.y}px;--c:${m.c}">
+      <div class="nhead" data-head>${["verified", "stale"].includes(s.status) ? `<span class="nlock">🔒</span>` : ""}
+        <div class="ntitle">${esc(sp.title || s.id)}</div>
+        <div class="nsub"><span class="spill">${m.label}</span><span class="kchip">${esc(sp.kind || "custom")}</span>${sp.variant_of ? `<span class="kchip">alt of ${esc(sp.variant_of)}</span>` : ""}</div></div>
+      <div class="nports">${rows.length ? rows.join("") : `<div class="port none">no inputs or outputs yet</div>`}</div>
+      <div class="nfoot">${footLine(s)}</div></div>`;
+  }).join("");
+  let e = "";
+  for (const s of vs) {
+    for (const i of s.spec.inputs || []) {
+      const [up, on] = String(i.from || "").split(".");
+      const u = byId(up); if (!u || !ids.has(up) || !(u.spec.outputs || []).some(o => o.name === on)) continue;
+      const a = outPort(u, on), b = inPort(s, i.name);
+      e += `<g><path class="edge-hit" d="${curve(a, b)}" data-to="${esc(s.id)}" data-input="${esc(i.name)}"/><path class="edge" d="${curve(a, b)}"/></g>`;
+    }
+    for (const dep of s.spec.depends_on || []) {
+      const u = byId(dep); if (!u || !ids.has(dep)) continue;
+      const pu = P(u), ps = P(s), a = { x: pu.x + W, y: pu.y + HEAD / 2 }, b = { x: ps.x, y: ps.y + HEAD / 2 };
+      e += `<g><path class="edge-hit" d="${curve(a, b)}" data-to="${esc(s.id)}" data-dep="${esc(dep)}"/><path class="edge dep" d="${curve(a, b)}"/></g>`;
+    }
   }
-  for (const s of active) {
-    const p = pos[s.id], st = STATUS[s.status];
-    h += `<g class="node ${s.spec.variant_of ? "alt" : ""}" onclick="openDrawer('${s.id}')">
-      <rect class="box" x="${p.x}" y="${p.y}" width="${W}" height="${H}" rx="10"/>
-      <rect x="${p.x}" y="${p.y}" width="5" height="${H}" rx="2" fill="${st.c}"/>
-      <text x="${p.x + 16}" y="${p.y + 26}" font-weight="600">${esc((s.spec.title || s.id).slice(0, 24))}</text>
-      <text class="sub" x="${p.x + 16}" y="${p.y + 44}">${esc(`${s.id} · ${s.spec.kind || "custom"}`.slice(0, 27))}</text>
-      <circle cx="${p.x + 20}" cy="${p.y + 64}" r="4.5" fill="${st.c}"/>
-      <text x="${p.x + 30}" y="${p.y + 68}" font-size="12" style="fill:${st.c}">${esc(cardLine(s))}</text>
-    </g>`;
-  }
-  svg.innerHTML = h;
+  if (drag?.type === "wire") e += `<path class="edge temp" d="${curve(drag.a, drag.b)}"/>`;
+  $("edges").innerHTML = e;
+  applyView();
+}
+function applyView() { $("world").style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; $("zl").textContent = Math.round(view.z * 100) + "%"; localStorage.setItem("arx.view", JSON.stringify(view)); }
+function toWorld(ev) { const r = $("stage").getBoundingClientRect(); return { x: (ev.clientX - r.left - view.x) / view.z, y: (ev.clientY - r.top - view.y) / view.z }; }
+function zoomBy(f, cx, cy) {
+  const r = $("stage").getBoundingClientRect(); cx ??= r.width / 2; cy ??= r.height / 2;
+  const z = Math.min(2.2, Math.max(0.25, view.z * f)); const k = z / view.z;
+  view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.z = z; applyView();
+}
+function fit() {
+  const vs = visible(); if (!vs.length) return;
+  const xs = vs.map(s => P(s).x), ys = vs.map(s => P(s).y), x2 = vs.map(s => P(s).x + W), y2 = vs.map(s => P(s).y + nodeH(s));
+  const minx = Math.min(...xs), miny = Math.min(...ys), maxx = Math.max(...x2), maxy = Math.max(...y2);
+  const r = $("stage").getBoundingClientRect(), z = Math.min(1.2, Math.max(0.3, Math.min((r.width - 120) / (maxx - minx), (r.height - 140) / (maxy - miny))));
+  view = { z, x: (r.width - (maxx - minx) * z) / 2 - minx * z, y: (r.height - (maxy - miny) * z) / 2 - miny * z }; applyView();
+}
+async function tidy() {
+  if (!confirm("Arrange every box left to right by its connections?")) return;
+  layoutDefaults();
+  try { for (const s of visible()) if (s.status !== "archived") await api(`/api/move/${s.id}`, s._auto); pos = {}; await load(); fit(); } catch (e) { toast(e.message, true); }
 }
 
-/* ---------------- drawer ---------------- */
-function openDrawer(id) {
-  if (dirty && sel !== id && !confirm("Discard unsaved changes?")) return;
-  sel = id; dirty = false; fillDrawer(true);
-  $("drawer").classList.add("show"); $("scrim").classList.add("show");
-}
-function closeDrawer() {
-  if (dirty && !confirm("Discard unsaved changes?")) return;
-  dirty = false; sel = null; $("savebar").classList.remove("show");
-  $("drawer").classList.remove("show"); $("scrim").classList.remove("show");
-}
-function fillDrawer(reset) {
-  const st = byId(sel); if (!st) return;
-  if (reset) { draft = clone(st.spec); draft.decisions = clone(st.decisions); dirty = false; $("savebar").classList.remove("show");
-    for (const k of ["inputs","outputs","constraints","tests","invariants"]) draft[k] = draft[k] || []; }
-  const m = STATUS[st.status];
-  $("d-title").textContent = st.spec.title || st.id;
-  $("d-pill").innerHTML = `<span class="pill" style="--c:${m.c}">${m.label}</span>`;
-  const t = [];
-  if (st.status === "archived") t.push(`<button class="small" onclick="boxAct('restore')">Restore to board</button>`);
-  else {
-    t.push(`<button class="small" onclick="boxAct('insert_before')">＋ Insert a box before</button>`);
-    t.push(`<button class="small" onclick="boxAct('insert_after')">＋ Add a box after</button>`);
-    t.push(`<button class="small" onclick="boxAct('variant')">⑂ Try an alternative approach</button>`);
-    if (st.spec.variant_of) t.push(`<button class="small primary" onclick="boxAct('promote')">Use this instead of ${esc(st.spec.variant_of)}</button>`);
-    t.push(`<span style="flex:1"></span><button class="small" onclick="boxAct('archive')">Archive</button>`);
+/* pointer interactions */
+$("stage").addEventListener("mousedown", ev => {
+  if (ev.button !== 0) return;
+  const dot = ev.target.closest(".dot[data-out]");
+  const head = ev.target.closest("[data-head]");
+  const node = ev.target.closest(".node");
+  const hit = ev.target.closest(".edge-hit");
+  if (dot) { const [sid, name] = dot.dataset.out.split("."); const a = outPort(byId(sid), name); drag = { type: "wire", from: dot.dataset.out, src: sid, a, b: a }; ev.preventDefault(); return; }
+  if (head) { const id = node.dataset.id, p = P(byId(id)), w = toWorld(ev); drag = { type: "node", id, dx: w.x - p.x, dy: w.y - p.y, moved: false, sx: ev.clientX, sy: ev.clientY }; ev.preventDefault(); return; }
+  if (node) { select(node.dataset.id); return; }
+  if (hit) { removeEdge(hit); return; }
+  if (ev.target.closest(".hud")) return;
+  drag = { type: "pan", sx: ev.clientX, sy: ev.clientY, vx: view.x, vy: view.y, moved: false }; $("stage").classList.add("panning");
+});
+window.addEventListener("mousemove", ev => {
+  if (!drag) return;
+  if (drag.type === "pan") { view.x = drag.vx + ev.clientX - drag.sx; view.y = drag.vy + ev.clientY - drag.sy; drag.moved = drag.moved || Math.abs(ev.clientX - drag.sx) + Math.abs(ev.clientY - drag.sy) > 3; applyView(); }
+  else if (drag.type === "node") {
+    if (!drag.moved && Math.abs(ev.clientX - drag.sx) + Math.abs(ev.clientY - drag.sy) < 4) return;
+    drag.moved = true; const w = toWorld(ev); pos[drag.id] = { x: Math.round(w.x - drag.dx), y: Math.round(w.y - drag.dy) }; render();
+  } else if (drag.type === "wire") {
+    drag.b = toWorld(ev); render();
+    const t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".node"); if (t && t.dataset.id !== drag.src) t.classList.add("drop");
   }
-  if (!st.locked_at) t.push(`<button class="small danger" onclick="boxAct('delete')">Delete</button>`);
-  $("d-tools").innerHTML = t.join("");
-  drawEditor(); drawGate();
+});
+window.addEventListener("mouseup", async ev => {
+  if (!drag) return; const d = drag; drag = null; $("stage").classList.remove("panning");
+  if (d.type === "pan" && !d.moved && ev.target.closest("#stage") && !ev.target.closest(".node")) { if (sel) select(null); }
+  if (d.type === "node") {
+    if (!d.moved) { select(d.id); return; }
+    try { await api(`/api/move/${d.id}`, pos[d.id]); await load(true); delete pos[d.id]; } catch (e) { toast(e.message, true); }
+  }
+  if (d.type === "wire") {
+    const t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".node");
+    render();
+    if (!t || t.dataset.id === d.src) return;
+    const to = t.dataset.id, ts = byId(to);
+    if (ts.locked_at && !confirm(`“${ts.spec.title}” is verified. Adding an input changes its spec, so it goes stale and needs re-approval. Connect anyway?`)) return;
+    if (dirty && sel === to) { toast("Save or discard your edits to that box first.", true); return; }
+    try { const r = await api("/api/connect", { from: d.from, to }); toast(`Connected → ${ts.spec.title}.${r.name}`); await load(); select(to, "contract"); } catch (e) { toast(e.message, true); }
+  }
+});
+$("stage").addEventListener("dblclick", async ev => {
+  if (ev.target.closest(".node") || ev.target.closest(".hud")) return;
+  const w = toWorld(ev); await createBox(w.x - W / 2, w.y - 30);
+});
+$("stage").addEventListener("wheel", ev => {
+  ev.preventDefault();
+  const r = $("stage").getBoundingClientRect();
+  if (ev.ctrlKey || ev.metaKey) zoomBy(Math.exp(-ev.deltaY * 0.01), ev.clientX - r.left, ev.clientY - r.top);
+  else { view.x -= ev.deltaX; view.y -= ev.deltaY; applyView(); }
+}, { passive: false });
+async function removeEdge(hit) {
+  const to = hit.dataset.to, ts = byId(to);
+  const what = hit.dataset.input ? `input “${hit.dataset.input}” of ${ts.spec.title}` : `dependency ${hit.dataset.dep} → ${ts.spec.title}`;
+  if (!confirm(`Remove the arrow into ${what}?` + (ts.locked_at ? "\n\nThat box is verified; it will go stale." : ""))) return;
+  try { await api("/api/disconnect", { to, input: hit.dataset.input, dep: hit.dataset.dep }); await load(); } catch (e) { toast(e.message, true); }
+}
+async function createBox(x, y) {
+  if (dirty && !confirm("Discard unsaved changes to the current box?")) return;
+  dirty = false;
+  try { const r = await api("/api/stages", { title: "Untitled box", kind: "custom", x, y }); await load(); select(r.id, "spec"); setTimeout(() => { const t = $("f-title"); t?.focus(); t?.select(); }, 50); }
+  catch (e) { toast(e.message, true); }
+}
+function addBoxCenter() { const r = $("stage").getBoundingClientRect(); createBox((r.width / 2 - view.x) / view.z - W / 2, (r.height / 2 - view.y) / view.z - 60); }
+
+/* ================= inspector ================= */
+function select(id, t) {
+  if (id === sel && !t) return;
+  if (dirty && !confirm("Discard unsaved changes to this box?")) return;
+  sel = id; dirty = false; if (t) tab = t; else if (!id) tab = "spec";
+  render(); renderInspector(true);
 }
 function touch() { dirty = true; $("savebar").classList.add("show"); }
-async function boxAct(a) {
-  const st = byId(sel), name = st.spec.title || st.id;
-  const titles = { insert_before: `Name the new box that runs before “${name}”:`, insert_after: `Name the new box that reads from “${name}”:` };
-  const body = {};
-  if (titles[a]) { const t = prompt(titles[a]); if (!t) return; body.title = t; }
-  if (a === "variant" && !confirm(`Create an alternative to “${name}”? It keeps the same inputs, outputs and checks, and its approach is left blank for you.`)) return;
-  if (a === "promote" && !confirm(`Use “${name}” instead of “${st.spec.variant_of}”? Downstream boxes will read from this one, and “${st.spec.variant_of}” is archived.`)) return;
-  if (a === "archive" && !confirm(`Archive “${name}”?`)) return;
-  if (a === "delete" && !confirm(`Delete “${name}” permanently?`)) return;
-  if (st.locked_at && ["insert_before"].includes(a) && !confirm("This box is verified. Rewiring its inputs marks it stale, and it needs re-approval. Continue?")) return;
-  try {
-    const r = await api(`/api/${a}/${sel}`, body);
-    await load();
-    if (r.id) { toast(a === "variant" ? "Alternative created. Write its approach." : "Box added. Fill in its spec."); sel = null; openDrawer(r.id); }
-    else if (a === "delete") { dirty = false; closeDrawer(); toast("Deleted"); }
-    else { toast("Done"); fillDrawer(true); }
-  } catch (e) { toast(e.message, true); }
+function renderInspector(reset) {
+  const st = sel && byId(sel);
+  if (st && reset) { draft = clone(st.spec); draft.decisions = clone(st.decisions); for (const k of ["inputs", "outputs", "constraints", "tests", "invariants"]) draft[k] = draft[k] || []; dirty = false; }
+  $("savebar").classList.toggle("show", dirty);
+  renderHead(); renderGate(); renderTabs(); renderTab();
 }
-
-/* ---------------- editor ---------------- */
+function renderHead() {
+  const st = sel && byId(sel);
+  if (!st) { $("ihead").innerHTML = `<div class="ihead"><div class="row1"><span class="kchip">pipeline</span></div><h1>${esc(S.pipeline.name || "pipeline")}</h1></div>`; return; }
+  $("ihead").innerHTML = `<div class="ihead"><div class="row1"><span class="kchip">${esc(st.spec.kind || "custom")}</span><span class="sid">${esc(st.id)}</span><span style="flex:1"></span><button class="ghost sm" onclick="select(null)">✕</button></div>
+    <h1>${esc(st.spec.title || st.id)}</h1></div>`;
+}
+function renderGate() {
+  const st = sel && byId(sel);
+  if (!st) { $("gate").innerHTML = ""; return; }
+  const m = STATUS[st.status], depsOk = st.deps.every(d => byId(d)?.status === "verified");
+  let h = `<div class="gate" style="--c:${m.c}"><div class="gt">${m.label}</div><p>${m.explain}</p>`;
+  if (st.reasons.length && st.status !== "verified") h += `<ul>${st.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>`;
+  const acts = [];
+  if (st.status === "ready") acts.push(`<button class="pink" ${dirty ? "disabled" : ""} onclick="act('approve')">Approve spec</button>`);
+  if (["approved", "failing", "stale", "verified"].includes(st.status)) acts.push(`<button class="mint" ${depsOk && st.files_exist.length ? "" : "disabled"} onclick="act('verify')">Run checks</button>`);
+  if (st.status === "blocked") acts.push(`<button class="dark" onclick="act('retry')">Give ${S.policy.max_attempts} more attempts</button>`);
+  if (st.locked_at && st.status !== "archived") acts.push(`<button class="danger" onclick="act('unlock')">Unlock</button>`);
+  if (st.status === "archived") acts.push(`<button onclick="boxAct('restore')">Restore</button>`);
+  if (acts.length) h += `<div class="acts">${acts.join("")}</div>`;
+  if (["approved", "failing"].includes(st.status) && !st.files_exist.length) h += `<p class="help" style="margin-top:8px">Waiting for the agent: run <code>/arx-build</code> in Claude Code.</p>`;
+  if (!depsOk && st.deps.length && !["draft", "ready", "archived"].includes(st.status)) h += `<p class="help" style="margin-top:8px">Upstream must be verified first: ${st.deps.map(esc).join(", ")}</p>`;
+  if (["failing", "blocked", "stale", "tampered"].includes(st.status)) h += `<div class="nextopts">
+      <button onclick="tab='spec';renderTabs();renderTab();setTimeout(()=>$('f-approach')?.focus(),30)">Revise this box<span>Change the approach, decisions or checks, then re-approve.</span></button>
+      <button onclick="boxAct('insert_before')">＋ Insert a box before<span>Add an upstream step; inputs are rewired through it.</span></button>
+      <button onclick="boxAct('variant')">⑂ Try an alternative approach<span>Same contract and checks, your new method. Keep whichever passes.</span></button>
+      <button onclick="tab='try';renderTabs();renderTab()">▶ Try it yourself<span>Run this box on your own input and inspect the output.</span></button></div>`;
+  $("gate").innerHTML = h + `</div>`;
+}
+function renderTabs() {
+  const st = sel && byId(sel);
+  if (!st) { $("tabs").innerHTML = ""; return; }
+  const n = k => (st.issues || []).filter(i => k(i)).length;
+  const specN = n(i => /^(purpose|approach|constraints|unanswered)/.test(i)), conN = n(i => /^(output|input|outputs|reads|depends)/.test(i)), chkN = n(i => /^(tests|invariants|test |invariant )/.test(i));
+  const b = x => x ? `<span class="badge">${x}</span>` : "";
+  $("tabs").innerHTML = [["spec", "Spec" + b(specN)], ["contract", "Contract" + b(conN)], ["checks", "Checks" + b(chkN)], ["try", "Try it"], ["box", "Box"]]
+    .map(([k, l]) => `<button class="${tab === k ? "on" : ""}" onclick="tab='${k}';renderTabs();renderTab()">${l}</button>`).join("");
+}
+function renderTab() {
+  const st = sel && byId(sel);
+  if (!st) return renderOverview();
+  ({ spec: tabSpec, contract: tabContract, checks: tabChecks, try: tabTry, box: tabBox })[tab](st);
+  wire();
+}
 function missing(prefix) { return (byId(sel)?.issues || []).some(i => i.startsWith(prefix)); }
-function bind(el, setter) { el.addEventListener("input", () => { setter(el.value); touch(); }); }
-function listCard(title, hint, key, cols, fields, blank, missKey) {
-  const rows = draft[key], tmpl = cols.join(" ") + " 28px";
-  let h = `<div class="card ${missing(missKey) ? "missing" : ""}"><h3>${title} <span class="hint">${hint}</span></h3>`;
-  if (rows.length) h += `<div class="colhead" style="grid-template-columns:${tmpl}">${fields.map(f => `<div>${f.label}</div>`).join("")}<div></div></div>`;
-  rows.forEach((r, i) => {
-    h += `<div class="row" style="grid-template-columns:${tmpl}">` + fields.map(f => {
-      const v = f.get ? f.get(r) : r[f.k];
-      if (f.select) return `<select data-l="${key}" data-i="${i}" data-k="${f.k}">${f.select().map(o => `<option ${o === v ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
-      if (f.area) return `<textarea class="${f.code ? "code" : ""}" rows="2" data-l="${key}" data-i="${i}" data-k="${f.k}" placeholder="${esc(f.ph || "")}">${esc(v)}</textarea>`;
-      return `<input class="${f.code ? "code" : ""}" data-l="${key}" data-i="${i}" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph || "")}">`;
-    }).join("") + `<button class="x" title="remove" onclick="rm('${key}',${i})">×</button></div>`;
-  });
-  if (!rows.length) h += `<div class="empty">None yet.</div>`;
-  h += `<button class="small" style="margin-top:6px" onclick='addRow("${key}", ${JSON.stringify(blank)})'>+ add</button></div>`;
-  return h;
+
+/* ---------- overview ---------- */
+function renderOverview() {
+  const act = S.stages.filter(s => s.status !== "archived");
+  let h = `<div class="sec"><label>Pipeline name</label><input id="pv-name" value="${esc(S.pipeline.name || "")}"><label>Description</label><textarea id="pv-desc">${esc(S.pipeline.description || "")}</textarea>
+    <div style="margin-top:8px"><button class="sm" onclick="savePipeline()">Save</button></div></div>`;
+  h += `<div class="sec overview"><h3>Boxes</h3>${act.length ? act.map(s => `<div class="st" style="--c:${STATUS[s.status].c}" onclick="select('${s.id}')"><span class="d"></span><div><div class="t">${esc(s.spec.title || s.id)} <span class="kchip">${STATUS[s.status].label}</span></div><div class="r">${esc(s.status === "verified" ? "locked, checks pass" : (s.reasons[0] || ""))}</div></div></div>`).join("") : `<p class="muted">No boxes yet.</p>`}</div>`;
+  h += `<div class="sec"><h3>How it works</h3><ol class="help" style="padding-left:18px;line-height:1.8">
+    <li><b>Add boxes</b>: double-click the canvas. You decide every step.</li>
+    <li><b>Connect</b> by dragging an output <b style="color:var(--teal)">●</b> onto another box.</li>
+    <li><b>Specify</b> each box: approach, decisions, a typed contract, tests.</li>
+    <li><b>Approve</b>. The agent implements exactly that (<code>/arx-build</code>).</li>
+    <li><b>Checks pass</b> → the box locks. Failures come back to you.</li>
+    <li><b>Try it</b>: run any box on your own input and inspect the output.</li></ol></div>`;
+  $("ibody").innerHTML = h;
 }
-function rm(key, i) { draft[key].splice(i, 1); touch(); drawEditor(); }
-function addRow(key, blank) { draft[key].push(clone(blank)); touch(); drawEditor(); }
-function upstreamOutputs() {
-  const opts = [""];
-  for (const s of S.stages) if (s.id !== sel && s.status !== "archived") for (const o of s.spec.outputs || []) opts.push(`${s.id}.${o.name}`);
-  return opts;
-}
-function drawEditor() {
-  const st = byId(sel); if (!st) return;
-  let h = `<div class="card ${missing("purpose") || missing("approach") ? "missing" : ""}">
-    <h3>Box <span class="hint muted">${esc(st.id)}${st.spec.variant_of ? ` · alternative to ${esc(st.spec.variant_of)}` : ""}</span></h3>
-    <div class="two"><div><label>Title</label><input id="f-title" value="${esc(draft.title)}"></div>
-    <div><label>Kind <span class="muted">(adds the questions you must answer)</span></label><select id="f-kind">${Object.keys(S.kinds).map(k => `<option ${k === (draft.kind || "custom") ? "selected" : ""}>${k}</option>`).join("")}</select></div></div>
-    <label>Purpose: what this box is for</label><textarea id="f-purpose" class="${missing("purpose") ? "field-missing" : ""}">${esc(draft.purpose)}</textarea>
-    <label>Approach: <b>your method</b>. The agent implements it literally and never substitutes its own.</label>
-    <textarea id="f-approach" class="big ${missing("approach") ? "field-missing" : ""}" placeholder="Describe exactly how this step is done.">${esc(draft.approach)}</textarea>
-  </div>`;
-  h += listCard("Inputs", "arrows in: what this box reads", "inputs", ["1fr", "1.3fr", "1fr"],
-    [{ k: "name", label: "name" }, { k: "from", label: "from (box.output)", select: upstreamOutputs }, { k: "type", label: "type", ph: "list[str]" }],
-    { name: "", from: "", type: "" }, "input");
-  h += listCard("Outputs", "arrows out: checked on every run", "outputs", ["1fr", "0.8fr", "2fr"],
-    [{ k: "name", label: "name" }, { k: "type", label: "type", ph: "ndarray | list[str] | dataframe" }, { k: "description", label: "description", ph: "shape, dtype, ordering..." }],
-    { name: "", type: "", description: "" }, "output");
-  const isOpen = d => d.answer === null || d.answer === undefined || String(d.answer).trim() === "";
+async function savePipeline() { try { await api("/api/pipeline", { name: $("pv-name").value, description: $("pv-desc").value }); toast("Saved"); await load(); } catch (e) { toast(e.message, true); } }
+
+/* ---------- spec tab ---------- */
+function tabSpec(st) {
+  const kinds = Object.keys(S.kinds);
+  let h = `<div class="sec ${missing("purpose") || missing("approach") ? "missing" : ""}">
+    <div class="grid2"><div><label>Title</label><input id="f-title" value="${esc(draft.title)}"></div>
+    <div><label>Kind <span class="muted">· adds required questions</span></label><select id="f-kind">${kinds.map(k => `<option ${k === (draft.kind || "custom") ? "selected" : ""}>${k}</option>`).join("")}</select></div></div>
+    <label>Purpose</label><textarea id="f-purpose" class="${missing("purpose") ? "miss" : ""}" placeholder="What is this box for?">${esc(draft.purpose)}</textarea>
+    <label>Approach: your method, implemented literally</label><textarea id="f-approach" class="big ${missing("approach") ? "miss" : ""}" placeholder="Exactly how this step must be done.">${esc(draft.approach)}</textarea></div>`;
   const openD = draft.decisions.filter(isOpen).length;
-  h += `<div class="card ${openD ? "missing" : ""}"><h3>Decisions <span class="hint">${openD ? `${openD} unanswered. The agent won't guess these.` : "all answered"}</span></h3>
-    <p class="help">Keyed answers reach the code as <code>params[key]</code>.</p>`;
+  h += `<div class="sec ${openD ? "missing" : ""}"><h3>Decisions <span class="h">${openD ? `${openD} unanswered, the agent won't guess` : "all answered"}</span></h3><p class="help">Keyed answers reach the code as <span class="key">params[key]</span>.</p>`;
   draft.decisions.forEach((d, i) => {
-    const open = isOpen(d);
-    const by = d.asked_by === "agent" ? `<span class="badge agent">agent's question</span>` : d.asked_by === "arx" ? `<span class="badge req">required for ${esc(draft.kind)}</span>` : "";
-    const ans = String(d.answered_by || "").startsWith("agent") ? `<span class="badge agent">${esc(d.answered_by)}</span>` : "";
-    h += `<div class="decision ${open ? "open" : ""}">
-      <div class="q"><span style="flex:1">${esc(d.question)}</span>${d.key ? `<span class="key">params.${esc(d.key)}</span>` : ""}${by}${ans}
-      ${d.asked_by === "arx" ? "" : `<button class="x" onclick="rm('decisions',${i})">×</button>`}</div>
-      ${d.why ? `<div class="help" style="margin:4px 0 0">${esc(d.why)}</div>` : ""}
-      <input style="margin-top:6px" data-l="decisions" data-i="${i}" data-k="answer" value="${esc(open ? "" : (typeof d.answer === "object" ? JSON.stringify(d.answer) : d.answer))}" placeholder="your answer" class="${open ? "field-missing" : ""}">
-      ${(d.options || []).length ? `<div class="chips">${d.options.map(o => `<button class="chip" onclick='pick(${i}, ${JSON.stringify(String(o))})'>${esc(o)}</button>`).join("")}</div>` : ""}
-    </div>`;
+    const o = isOpen(d);
+    const by = d.asked_by === "agent" ? `<span class="tag agent">agent asks</span>` : d.asked_by === "arx" ? `<span class="tag req">required</span>` : "";
+    const ans = String(d.answered_by || "").startsWith("agent") ? `<span class="tag agent">relayed by agent</span>` : "";
+    h += `<div class="card ${o ? "open" : ""}"><div class="ch"><b style="flex:1;font-size:13px">${esc(d.question)}</b>${by}${ans}${d.asked_by === "arx" ? "" : `<button class="x" onclick="rm('decisions',${i})">×</button>`}</div>
+      ${d.key ? `<div class="key" style="margin-top:2px">params.${esc(d.key)}</div>` : ""}${d.why ? `<div class="help">${esc(d.why)}</div>` : ""}
+      <input style="margin-top:6px" class="${o ? "miss" : ""}" data-l="decisions" data-i="${i}" data-k="answer" value="${esc(o ? "" : (typeof d.answer === "object" ? JSON.stringify(d.answer) : d.answer))}" placeholder="your answer">
+      ${(d.options || []).length ? `<div class="chips">${d.options.map(x => `<button class="chip" onclick='pick(${i}, ${JSON.stringify(String(x))})'>${esc(x)}</button>`).join("")}</div>` : ""}</div>`;
   });
-  h += `<div class="two" style="grid-template-columns:2fr 1fr auto"><input id="nq" placeholder="add your own decision / question"><input id="nk" class="code" placeholder="param key"><button class="small" onclick="addQ()">+ add</button></div></div>`;
-  h += `<div class="card ${missing("constraints") ? "missing" : ""}"><h3>Constraints <span class="hint">rules the code must respect</span></h3>`;
-  draft.constraints.forEach((c, i) => h += `<div class="row" style="grid-template-columns:1fr 28px"><input data-l="constraints" data-i="${i}" value="${esc(c)}"><button class="x" onclick="rm('constraints',${i})">×</button></div>`);
-  if (!draft.constraints.length) h += `<div class="empty">None yet.</div>`;
-  h += `<button class="small" onclick="addRow('constraints', '')">+ add</button></div>`;
-  h += listCard("Test cases", "your input → expected output (Python expr over out / inp / params)", "tests", ["0.9fr", "1.3fr", "0.8fr", "1.6fr"],
-    [{ k: "name", label: "name" }, { k: "input", label: "input (JSON/YAML)", area: true, code: true, get: r => toYaml(r.input), ph: '{"texts": ["a", "b"]}' },
-     { k: "params", label: "param overrides", area: true, code: true, get: r => toYaml(r.params) },
-     { k: "expect", label: "expect", area: true, code: true, ph: "out['labels'].shape == (2,)" }],
-    { name: "", input: "", expect: "" }, "test");
-  h += listCard("Invariants", "must hold on the REAL data output", "invariants", ["1fr", "2.5fr"],
-    [{ k: "name", label: "name" }, { k: "expr", label: "expr (out, inp, params, np)", code: true }],
-    { name: "", expr: "" }, "invariant");
-  h += `<div class="card"><h3>Files <span class="hint">code owned by this box (verified and locked together)</span></h3>
-    <input id="f-files" class="code" value="${esc((draft.files || st.files).join(", "))}"></div>`;
-  $("editor").innerHTML = h;
-  bind($("f-title"), v => draft.title = v);
-  bind($("f-purpose"), v => draft.purpose = v);
-  bind($("f-approach"), v => draft.approach = v);
-  bind($("f-files"), v => draft.files = v.split(",").map(x => x.trim()).filter(Boolean));
+  h += `<div class="grid3" style="grid-template-columns:2fr 1fr auto"><input id="nq" placeholder="add a decision / question"><input id="nk" class="mono" placeholder="param key"><button class="sm" onclick="addQ()">Add</button></div></div>`;
+  h += `<div class="sec ${missing("constraints") ? "missing" : ""}"><h3>Constraints <span class="h">rules the code must respect</span></h3>`;
+  draft.constraints.forEach((c, i) => h += `<div style="display:flex;gap:6px;margin-bottom:6px"><input data-l="constraints" data-i="${i}" value="${esc(c)}"><button class="x" onclick="rm('constraints',${i})">×</button></div>`);
+  h += `<button class="sm" onclick="addRow('constraints','')">＋ constraint</button></div>`;
+  $("ibody").innerHTML = h;
+  bind("f-title", v => draft.title = v); bind("f-purpose", v => draft.purpose = v); bind("f-approach", v => draft.approach = v);
   $("f-kind").addEventListener("change", e => { draft.kind = e.target.value; touch(); toast("Save to load this kind's required questions."); });
-  document.querySelectorAll("#editor [data-l]").forEach(el => {
-    el.addEventListener(el.tagName === "SELECT" ? "change" : "input", () => {
-      const l = el.dataset.l, i = +el.dataset.i, k = el.dataset.k;
-      if (l === "constraints") draft.constraints[i] = el.value; else draft[l][i][k] = el.value;
-      if (l === "decisions" && k === "answer") draft[l][i].answered_by = "researcher";
+}
+function bind(id, fn) { const el = $(id); el?.addEventListener("input", () => { fn(el.value); touch(); }); }
+function rm(k, i) { draft[k].splice(i, 1); touch(); renderTab(); }
+function addRow(k, blank) { draft[k].push(clone(blank)); touch(); renderTab(); }
+function pick(i, v) { draft.decisions[i].answer = v; draft.decisions[i].answered_by = "researcher"; touch(); renderTab(); }
+function addQ() { const q = $("nq").value.trim(); if (!q) return; const d = { question: q, answer: null, asked_by: "researcher" }; const k = $("nk").value.trim(); if (k) d.key = k; draft.decisions.push(d); touch(); renderTab(); }
+
+/* ---------- contract tab ---------- */
+const splitType = t => { const m = String(t || "").match(/^(\w+)\s*(?:\[(.*)\])?$/); return m ? [m[1].toLowerCase(), (m[2] || "").trim()] : [String(t || ""), ""]; };
+const opt = (list, v) => { const l = list.includes(v) || !v ? list : [...list, v]; return l.map(x => `<option ${x === v ? "selected" : ""}>${esc(x)}</option>`).join(""); };
+function portEditor(kind, p, i) {
+  const [base, inner] = splitType(p.type), sc = p.schema || {};
+  const f = (k, ph, cls = "") => `<input class="${cls}" data-p="${kind}" data-i="${i}" data-s="${k}" value="${esc(sc[k] ?? "")}" placeholder="${esc(ph)}">`;
+  const cb = (k, label) => `<label class="chk"><input type="checkbox" data-p="${kind}" data-i="${i}" data-s="${k}" ${sc[k] ? "checked" : ""}> ${label}</label>`;
+  let h = `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-p="${kind}" data-i="${i}" data-f="name" value="${esc(p.name)}" placeholder="name">
+    <select style="width:130px" data-p="${kind}" data-i="${i}" data-f="base">${opt(S.port_types, base)}</select>
+    ${["list", "tuple"].includes(base) ? `<select style="width:90px" data-p="${kind}" data-i="${i}" data-f="item">${opt(["", "str", "int", "float", "bool", "dict", "list", "any"], inner)}</select>` : ""}
+    <button class="x" onclick="rmPort('${kind}',${i})">×</button></div>`;
+  if (kind === "inputs") h += `<label>From</label><select data-p="${kind}" data-i="${i}" data-f="from">${opt(upstreamOutputs(), p.from || "")}</select>`;
+  h += `<label>Description</label><input data-p="${kind}" data-i="${i}" data-f="description" value="${esc(p.description || "")}" placeholder="what it is, units, ordering…">`;
+  if (base === "dataframe") {
+    const cols = sc.columns || [];
+    h += `<label>Columns</label><div class="coltable"><span class="hd">name</span><span class="hd">dtype</span><span class="hd">nulls ok</span><span class="hd">unique</span><span></span>
+      ${cols.map((c, j) => `<input class="mono" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="name" value="${esc(c.name || "")}"><select data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="dtype">${opt(S.dtypes, c.dtype || "any")}</select>
+        <input type="checkbox" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="nullable" ${c.nullable !== false ? "checked" : ""}><input type="checkbox" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="unique" ${c.unique ? "checked" : ""}>
+        <button class="x" onclick="rmCol('${kind}',${i},${j})">×</button>`).join("")}</div>
+      <button class="sm" style="margin-top:6px" onclick="addCol('${kind}',${i})">＋ column</button>
+      <div class="grid3"><div><label>Rows (n or number)</label>${f("rows", "n", "mono")}</div><div><label>Min rows</label>${f("min_rows", "")}</div><div><label>Max rows</label>${f("max_rows", "")}</div></div>
+      <div style="margin-top:8px">${cb("exact_columns", "No extra columns allowed")}</div>`;
+  } else if (base === "ndarray") {
+    const shape = Array.isArray(sc.shape) ? "[" + sc.shape.join(", ") + "]" : (sc.shape || "");
+    h += `<div class="grid2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div>
+      <div><label>Shape <span class="muted">· ints, * or symbols</span></label><input class="mono" data-p="${kind}" data-i="${i}" data-s="shape" value="${esc(shape)}" placeholder="[n, 384]"></div></div>
+      <div class="grid3"><div><label>Min value</label>${f("min", "")}</div><div><label>Max value</label>${f("max", "")}</div><div style="padding-top:30px">${cb("finite", "finite only")}</div></div>`;
+  } else if (["list", "tuple"].includes(base)) {
+    h += `<div class="grid3"><div><label>Length (n or number)</label>${f("length", "n", "mono")}</div><div><label>Min len</label>${f("min_len", "")}</div><div><label>Max len</label>${f("max_len", "")}</div></div>
+      <div style="display:flex;gap:14px;margin-top:8px">${cb("unique", "unique items")}${cb("nonempty_items", "no empty items")}</div>`;
+  } else if (base === "series") {
+    h += `<div class="grid2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div><div><label>Length (n)</label>${f("rows", "n", "mono")}</div></div>
+      <div style="display:flex;gap:14px;margin-top:8px">${cb("unique", "unique")}</div>`;
+  } else if (base === "dict") {
+    h += `<label>Required keys</label><input class="mono" data-p="${kind}" data-i="${i}" data-s="keys" value="${esc(Array.isArray(sc.keys) ? sc.keys.join(", ") : (sc.keys || ""))}" placeholder="k1, k2">`;
+  } else if (["int", "float"].includes(base)) {
+    h += `<div class="grid2"><div><label>Min</label>${f("min", "")}</div><div><label>Max</label>${f("max", "")}</div></div>`;
+  }
+  return h + `</div>`;
+}
+function tabContract(st) {
+  let h = `<p class="help">The contract is checked on every test and every real run: types, columns, dtypes, shapes. Symbols like <span class="key">n</span> must agree across all of this box's inputs and outputs.</p>`;
+  h += `<div class="sec ${missing("input") || missing("reads") ? "missing" : ""}"><h3>Inputs <span class="h">arrows in</span></h3>${draft.inputs.map((p, i) => portEditor("inputs", p, i)).join("") || `<p class="muted">None. Drag an output ● from another box onto this one, or add one manually.</p>`}
+    <button class="sm" onclick="addPort('inputs')">＋ input</button></div>`;
+  h += `<div class="sec ${missing("output") ? "missing" : ""}"><h3>Outputs <span class="h">arrows out</span></h3>${draft.outputs.map((p, i) => portEditor("outputs", p, i)).join("") || `<p class="muted">Declare at least one output.</p>`}
+    <button class="sm" onclick="addPort('outputs')">＋ output</button></div>`;
+  $("ibody").innerHTML = h;
+}
+function upstreamOutputs() { const o = [""]; for (const s of S.stages) if (s.id !== sel && s.status !== "archived") for (const x of s.spec.outputs || []) o.push(`${s.id}.${x.name}`); return o; }
+function addPort(k) { draft[k].push(k === "outputs" ? { name: "", type: "dataframe", description: "", schema: { columns: [] } } : { name: "", from: "", type: "any" }); touch(); renderTab(); }
+function rmPort(k, i) { draft[k].splice(i, 1); touch(); renderTab(); }
+function addCol(k, i) { const p = draft[k][i]; p.schema = p.schema || {}; (p.schema.columns ||= []).push({ name: "", dtype: "str", nullable: false }); touch(); renderTab(); }
+function rmCol(k, i, j) { draft[k][i].schema.columns.splice(j, 1); touch(); renderTab(); }
+
+/* generic field wiring for the current tab */
+function wire() {
+  document.querySelectorAll("#ibody [data-l]").forEach(el => el.addEventListener("input", () => {
+    const l = el.dataset.l, i = +el.dataset.i, k = el.dataset.k;
+    if (l === "constraints") draft.constraints[i] = el.value; else draft[l][i][k] = el.value;
+    if (l === "decisions" && k === "answer") draft[l][i].answered_by = "researcher";
+    touch();
+  }));
+  document.querySelectorAll("#ibody [data-p]").forEach(el => {
+    const ev = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+    el.addEventListener(ev, () => {
+      const p = draft[el.dataset.p][+el.dataset.i]; const val = el.type === "checkbox" ? el.checked : el.value;
+      p.schema = p.schema || {};
+      if (el.dataset.c !== undefined) { p.schema.columns[+el.dataset.c][el.dataset.ck] = val; }
+      else if (el.dataset.s) { if (el.dataset.s === "keys") p.schema.keys = val.split(",").map(x => x.trim()).filter(Boolean); else p.schema[el.dataset.s] = val; }
+      else if (el.dataset.f === "base" || el.dataset.f === "item") {
+        const [b, it] = splitType(p.type); const nb = el.dataset.f === "base" ? val : b, ni = el.dataset.f === "item" ? val : it;
+        p.type = ["list", "tuple"].includes(nb) && ni ? `${nb}[${ni}]` : nb;
+        if (el.dataset.f === "base") { p.schema = nb === "dataframe" ? { columns: [] } : {}; touch(); renderTab(); return; }
+      } else p[el.dataset.f] = val;
       touch();
+      if (el.dataset.f === "from" && val) { const [u, o] = val.split("."); const src = (byId(u)?.spec.outputs || []).find(x => x.name === o); if (src) { p.type = src.type; p.schema = clone(src.schema) || {}; if (!p.name) p.name = o; renderTab(); } }
     });
   });
 }
-function pick(i, v) { draft.decisions[i].answer = v; draft.decisions[i].answered_by = "researcher"; touch(); drawEditor(); }
-function addQ() { const q = $("nq").value.trim(); if (!q) return; const d = { question: q, answer: null, asked_by: "researcher" }; const k = $("nk").value.trim(); if (k) d.key = k; draft.decisions.push(d); touch(); drawEditor(); }
-async function save() {
-  const st = byId(sel); const body = clone(draft);
-  if (st.locked_at) { if (!confirm("This box is verified and locked. Changing its spec marks it stale, so it needs re-approval and re-verification. Continue?")) return; body._confirm_locked = true; }
-  try { await api(`/api/stage/${sel}`, body); dirty = false; $("savebar").classList.remove("show"); toast("Saved"); await load(); fillDrawer(true); }
+
+/* ---------- checks tab ---------- */
+function tabChecks(st) {
+  let h = `<div class="sec ${missing("tests") || missing("test ") ? "missing" : ""}"><h3>Test cases <span class="h">your input → expected output</span></h3>
+    <p class="help">Input is JSON; dataframes can be given as a list of row objects. <span class="key">expect</span> is a Python expression over <span class="key">out</span>, <span class="key">inp</span>, <span class="key">params</span>, <span class="key">np</span>, <span class="key">pd</span>.</p>`;
+  draft.tests.forEach((t, i) => h += `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-l="tests" data-i="${i}" data-k="name" value="${esc(t.name || "")}" placeholder="name"><button class="x" onclick="rm('tests',${i})">×</button></div>
+      <label>Input</label><textarea class="code" rows="2" data-l="tests" data-i="${i}" data-k="input">${esc(typeof t.input === "string" ? t.input : jsonish(t.input))}</textarea>
+      <div class="grid2"><div><label>Param overrides</label><textarea class="code" rows="1" data-l="tests" data-i="${i}" data-k="params">${esc(typeof t.params === "string" ? t.params : jsonish(t.params))}</textarea></div>
+      <div><label>Expected exception (optional)</label><input class="mono" data-l="tests" data-i="${i}" data-k="raises" value="${esc(t.raises || "")}" placeholder="ValueError"></div></div>
+      <label>Expect</label><textarea class="code" rows="2" data-l="tests" data-i="${i}" data-k="expect">${esc(t.expect || "")}</textarea></div>`);
+  h += `<button class="sm" onclick="addRow('tests',{name:'',input:'',expect:''})">＋ test case</button></div>`;
+  h += `<div class="sec ${missing("invariants") || missing("invariant ") ? "missing" : ""}"><h3>Invariants <span class="h">must hold on the real data</span></h3>`;
+  draft.invariants.forEach((v, i) => h += `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-l="invariants" data-i="${i}" data-k="name" value="${esc(v.name || "")}" placeholder="name"><button class="x" onclick="rm('invariants',${i})">×</button></div>
+      <textarea class="code" rows="1" style="margin-top:6px" data-l="invariants" data-i="${i}" data-k="expr" placeholder="out['docs']['text'].str.len().min() > 0">${esc(v.expr || "")}</textarea></div>`);
+  h += `<button class="sm" onclick="addRow('invariants',{name:'',expr:''})">＋ invariant</button></div>`;
+  const r = st.result;
+  h += `<div class="sec"><h3>Last run ${r ? `<span class="h">${r.passed ? "all passed" : "failing"} · ${esc(r.at)}</span>` : ""}</h3>`;
+  if (!r) h += `<p class="muted">Not run yet.</p>`;
+  else h += r.checks.map(c => `<details class="check" ${c.passed ? "" : "open"}><summary><span class="pf ${c.passed ? "pass" : "fail"}">${c.passed ? "PASS" : "FAIL"}</span><span style="flex:1">${esc(c.name)}</span><span class="kind">${c.kind} · ${c.seconds}s</span></summary><pre>${esc(c.detail)}</pre></details>`).join("");
+  h += `</div>`;
+  if (r?.preview) h += `<div class="sec"><h3>Real-data output <span class="h">from the last run</span></h3>${previews(r.preview)}</div>`;
+  if (st.artifacts.length) h += `<div class="sec arts"><h3>Artifacts</h3>${st.artifacts.map(a => /\.(png|jpe?g|svg|gif|webp)$/i.test(a) ? `<img src="/files/${encodeURI(a)}" title="${esc(a)}">` : `<div><a href="/files/${encodeURI(a)}" target="_blank">${esc(a)}</a></div>`).join("")}</div>`;
+  $("ibody").innerHTML = h;
+}
+
+/* ---------- previews ---------- */
+function previews(obj) { return Object.entries(obj || {}).map(([k, p]) => previewHtml(k, p)).join(""); }
+function previewHtml(name, p) {
+  let head = "", body = "";
+  if (p.kind === "table") {
+    head = `DataFrame · ${p.shape[0]} × ${p.shape[1]}`;
+    body = `<table class="t"><tr>${p.columns.map(c => `<th>${esc(c)}<small>${esc(p.dtypes[c])}</small></th>`).join("")}</tr>${p.rows.map(r => `<tr>${r.map(v => `<td title="${esc(v)}">${esc(v === null ? "∅" : v)}</td>`).join("")}</tr>`).join("")}</table>${p.shape[0] > p.rows.length ? `<div class="help" style="margin-top:6px">showing ${p.rows.length} of ${p.shape[0]} rows</div>` : ""}`;
+  } else if (p.kind === "array") {
+    head = `ndarray · ${p.dtype} · [${p.shape.join(", ")}]`;
+    body = p.stats ? `<div class="stats">${Object.entries(p.stats).map(([k, v]) => `<span>${k} ${esc(v)}</span>`).join("")}</div>` : "";
+    if (p.counts) { const mx = Math.max(...Object.values(p.counts)); body += Object.entries(p.counts).map(([k, v]) => `<div class="hbar"><span>${esc(k)}</span><i style="width:${100 * v / mx}%"></i><span>${v}</span></div>`).join(""); }
+    else if (Array.isArray(p.head)) body += `<table class="t">${(Array.isArray(p.head[0]) ? p.head : [p.head]).map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table>`;
+  } else if (p.kind === "list") {
+    head = `${esc(p.type)} · ${p.len} items`;
+    body = `<table class="t">${p.head.map((v, i) => `<tr><td class="muted" style="width:30px">${i}</td><td>${esc(typeof v === "object" ? JSON.stringify(v) : v)}</td></tr>`).join("")}</table>`;
+  } else if (p.kind === "dict") { head = `dict · ${p.keys.length} keys`; body = `<pre>${esc(JSON.stringify(p.items, null, 2))}</pre>`; }
+  else { head = esc(p.type || "value"); body = `<pre>${esc(p.repr)}</pre>`; }
+  return `<div class="pv"><div class="pvh">${esc(name)} <span class="kind">${head}</span></div><div class="pvb">${body}</div></div>`;
+}
+
+/* ---------- try it tab ---------- */
+function skeleton(st) {
+  const t = (st.spec.tests || []).find(t => t.input && typeof t.input === "object" && Object.keys(t.input).length);
+  if (t) return JSON.stringify(t.input, null, 2);
+  const o = {};
+  for (const i of st.spec.inputs || []) {
+    const [b, inner] = splitType(i.type), sc = i.schema || {};
+    o[i.name] = b === "dataframe" ? [Object.fromEntries((sc.columns || []).map(c => [c.name, c.dtype === "int" ? 0 : c.dtype === "float" ? 0.0 : ""]))]
+      : b === "ndarray" ? [[0.1, 0.2], [0.3, 0.4]] : ["list", "tuple"].includes(b) ? (inner === "str" ? ["example"] : [1, 2]) : b === "dict" ? {} : null;
+  }
+  return JSON.stringify(o, null, 2);
+}
+function tabTry(st) {
+  const ts = tryState[st.id] ||= { mode: "custom", input: skeleton(st), params: "", res: null, running: false };
+  const can = st.files_exist.length > 0;
+  let h = `<p class="help">Run this box yourself and inspect what comes out. Nothing here locks the box or counts as an attempt.</p>`;
+  if (!can) h += `<div class="problems"><b>No code yet.</b> The agent implements this box after you approve it. Then you can try it here.</div>`;
+  h += `<div class="sec" style="margin-top:12px"><div class="seg"><button class="${ts.mode === "custom" ? "on" : ""}" onclick="tryMode('custom')">My input</button><button class="${ts.mode === "real" ? "on" : ""}" onclick="tryMode('real')">Real upstream data</button></div>`;
+  if (ts.mode === "custom") h += `<label>Input (JSON)</label><textarea id="try-in" class="code big">${esc(ts.input)}</textarea>`;
+  else h += `<p class="help" style="margin-top:8px">Uses the actual outputs of the upstream boxes${st.deps.length ? ` (${st.deps.map(esc).join(", ")})` : ""}.</p>`;
+  h += `<label>Param overrides (JSON, optional)</label><input id="try-params" class="mono" value="${esc(ts.params)}" placeholder='{"n_clusters": 5}'>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="dark" ${can && !ts.running ? "" : "disabled"} onclick="runTry()">${ts.running ? "Running…" : "▶ Run"}</button></div></div>`;
+  const r = ts.res;
+  if (r) {
+    if (r.error) h += `<div class="problems"><b>${esc(r.error)}</b>${r.trace ? `<pre>${esc(r.trace)}</pre>` : ""}</div>`;
+    else {
+      h += r.ok ? `<div class="okbox">✓ Contract satisfied · ${r.seconds}s</div>` : `<div class="problems"><b>Contract violated</b><ul>${r.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`;
+      h += `<div class="sec" style="margin-top:14px"><h3>Output</h3>${previews(r.outputs)}</div>`;
+      h += `<details class="sec"><summary class="muted" style="cursor:pointer;font-weight:600">Input as the box saw it</summary>${previews(r.inputs)}</details>`;
+      if (ts.mode === "custom") h += `<div class="sec card"><h3>Save as a test case</h3><p class="help">Write what <i>should</i> be true about this output. The box must keep satisfying it.</p>
+        <input id="tt-name" placeholder="test name"><label>Expect</label><textarea id="tt-expect" class="code" rows="2" placeholder="out['labels'].tolist() == [0, 0, 1]"></textarea>
+        <div style="margin-top:8px"><button class="sm dark" onclick="saveTryTest()">Add test</button></div></div>`;
+    }
+  }
+  $("ibody").innerHTML = h;
+  $("try-in")?.addEventListener("input", e => ts.input = e.target.value);
+  $("try-params")?.addEventListener("input", e => ts.params = e.target.value);
+}
+function tryMode(m) { tryState[sel].mode = m; renderTab(); }
+async function runTry() {
+  const ts = tryState[sel]; let input = null, params = {};
+  try { if (ts.mode === "custom") input = JSON.parse(ts.input || "{}"); if (ts.params.trim()) params = JSON.parse(ts.params); }
+  catch (e) { return toast("Invalid JSON: " + e.message, true); }
+  ts.running = true; renderTab();
+  try { ts.res = await api(`/api/try/${sel}`, { mode: ts.mode, input, params }); } catch (e) { ts.res = { error: e.message }; }
+  ts.running = false; if (tab === "try") renderTab();
+}
+async function saveTryTest() {
+  const ts = tryState[sel], expect = $("tt-expect").value.trim(); if (!expect) return toast("Write an expect expression first.", true);
+  if (dirty) return toast("Save or discard your other edits first.", true);
+  const st = byId(sel);
+  if (st.locked_at && !confirm("This box is verified. Adding a test changes its spec, so it goes stale and needs re-approval. Continue?")) return;
+  try { await api(`/api/add_test/${sel}`, { name: $("tt-name").value.trim() || "tried case", input: JSON.parse(ts.input || "{}"), params: ts.params.trim() ? JSON.parse(ts.params) : undefined, expect }); toast("Test case added"); await load(); }
   catch (e) { toast(e.message, true); }
 }
-function discard() { fillDrawer(true); }
 
-/* ---------------- gate panel ---------------- */
-function drawGate() {
-  const st = byId(sel); if (!st) return;
-  const m = STATUS[st.status];
-  const depsOk = st.deps.every(d => byId(d)?.status === "verified");
-  let h = `<div class="card"><div class="status" style="--c:${m.c}"><span class="dot"></span>${m.label}</div>
-    <div class="explain">${m.explain}</div>`;
-  if (st.reasons.length) h += `<ul class="reasons">${st.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>`;
-  h += `<div class="actions">
-    ${st.status === "ready" ? `<button class="primary" ${dirty ? "disabled" : ""} onclick="act('approve')">Approve spec</button>` : ""}
-    ${["approved","failing","stale","verified"].includes(st.status) ? `<button class="go" ${depsOk && st.files_exist.length ? "" : "disabled"} onclick="act('verify')">Run checks</button>` : ""}
-    ${st.locked_at && st.status !== "archived" ? `<button class="danger" onclick="act('unlock')">Unlock</button>` : ""}
-  </div>`;
-  if (!depsOk && st.deps.length && st.status !== "archived") h += `<p class="help" style="margin-top:10px">Upstream boxes must be verified first: ${st.deps.map(esc).join(", ")}</p>`;
-  if (["approved","failing"].includes(st.status) && !st.files_exist.length) h += `<p class="help" style="margin-top:10px">Waiting for the agent: <code>/arx-build</code> in Claude Code.</p>`;
-  h += `<p class="help" style="margin-top:12px">${st.approved_at ? `approved ${esc(st.approved_at)}` : "not approved"}${st.locked_at ? ` · locked ${esc(st.locked_at)}` : ""}<br>files: <code>${st.files.map(esc).join(", ")}</code></p></div>`;
-
-  if (["failing", "blocked", "stale", "tampered"].includes(st.status)) {
-    h += `<div class="card"><h3>What next? <span class="hint">your call, not the agent's</span></h3><div class="next">
-      <button onclick="focusApproach()"><b>Revise this box</b><span>Change the approach, decisions or checks, then re-approve.</span></button>
-      <button onclick="boxAct('insert_before')"><b>＋ Insert a box before</b><span>Add a step upstream, e.g. extra cleaning, and rewire the inputs through it.</span></button>
-      <button onclick="boxAct('variant')"><b>⑂ Try an alternative approach</b><span>Same contract and checks, your new method. Keep whichever passes.</span></button>
-      ${st.status === "blocked" ? `<button onclick="act('retry')"><b>↻ Give the agent ${S.policy.max_attempts} more attempts</b><span>Same spec. Use this if the failures look like implementation bugs.</span></button>` : ""}
-    </div></div>`;
-  }
-  const r = st.result;
-  h += `<div class="card"><h3>Checks ${r ? `<span class="hint">${r.passed ? "all passed" : "failing"} · ${esc(r.at)}</span>` : ""}</h3>`;
-  if (!r) h += `<div class="empty">Not run yet.</div>`;
-  else for (const c of r.checks) h += `<details class="check" ${c.passed ? "" : "open"}><summary><span class="pf ${c.passed ? "pass" : "fail"}">${c.passed ? "PASS" : "FAIL"}</span><span style="flex:1">${esc(c.name)}</span><span class="kind">${c.kind} · ${c.seconds}s</span></summary><pre>${esc(c.detail)}</pre></details>`;
-  h += `</div>`;
-  if (st.artifacts.length) {
-    h += `<div class="card arts"><h3>Artifacts</h3>`;
-    for (const a of st.artifacts) h += /\.(png|jpe?g|svg|gif|webp)$/i.test(a) ? `<div class="muted" style="font-size:12px;margin-top:8px">${esc(a)}</div><img src="/files/${encodeURI(a)}">` : `<div><a href="/files/${encodeURI(a)}" target="_blank">${esc(a)}</a></div>`;
-    h += `</div>`;
-  }
-  $("gate").innerHTML = h;
+/* ---------- box tab ---------- */
+function tabBox(st) {
+  const a = st.status === "archived";
+  let h = `<div class="sec"><h3>Grow the flow</h3><div class="nextopts" style="margin-top:0">
+    <button ${a ? "disabled" : ""} onclick="boxAct('insert_before')">＋ Insert a box before<span>A new upstream step; this box's inputs are rewired through it.</span></button>
+    <button ${a ? "disabled" : ""} onclick="boxAct('insert_after')">＋ Add a box after<span>A new box that reads this box's outputs.</span></button>
+    <button ${a ? "disabled" : ""} onclick="boxAct('variant')">⑂ Try an alternative approach<span>Sibling box with the same contract and checks and a blank approach for you.</span></button>
+    ${st.spec.variant_of ? `<button class="pink" onclick="boxAct('promote')">Use this instead of ${esc(st.spec.variant_of)}<span style="color:#fff">Downstream boxes read from this one; the original is archived.</span></button>` : ""}
+  </div></div>
+  <div class="sec"><h3>Files <span class="h">code owned by this box, verified and locked together</span></h3><input id="f-files" class="mono" value="${esc((draft.files || st.files).join(", "))}"></div>
+  <div class="sec"><h3>Remove</h3><div style="display:flex;gap:8px">${a ? `<button onclick="boxAct('restore')">Restore</button>` : `<button onclick="boxAct('archive')">Archive</button>`}${st.locked_at ? "" : `<button class="danger" onclick="boxAct('delete')">Delete</button>`}</div></div>
+  <p class="help">approved ${esc(st.approved_at || "never")}${st.locked_at ? ` · locked ${esc(st.locked_at)}` : ""}</p>`;
+  $("ibody").innerHTML = h;
+  bind("f-files", v => draft.files = v.split(",").map(x => x.trim()).filter(Boolean));
 }
-function focusApproach() { const el = $("f-approach"); el.scrollIntoView({ behavior: "smooth", block: "center" }); el.focus(); }
+async function boxAct(a) {
+  const st = byId(sel), name = st.spec.title || st.id, body = {};
+  const ask = { insert_before: `Name the new box that runs before “${name}”:`, insert_after: `Name the new box that reads from “${name}”:` };
+  if (ask[a]) { const t = prompt(ask[a]); if (!t) return; body.title = t; }
+  const conf = { variant: `Create an alternative to “${name}”? Same inputs, outputs and checks; you write the new approach.`,
+    promote: `Use “${name}” instead of “${st.spec.variant_of}”? Downstream boxes will read from this one and the original is archived.`,
+    archive: `Archive “${name}”?`, delete: `Delete “${name}” permanently?` };
+  if (conf[a] && !confirm(conf[a])) return;
+  if (st.locked_at && a === "insert_before" && !confirm("This box is verified. Rewiring its inputs makes it stale and it needs re-approval. Continue?")) return;
+  try {
+    const r = await api(`/api/${a}/${sel}`, body);
+    if (r.id) {
+      const p = P(st); await api(`/api/move/${r.id}`, a === "insert_before" ? { x: p.x - 330, y: p.y + 40 } : { x: p.x + (a === "variant" ? 0 : 340), y: p.y + (a === "variant" ? nodeH(st) + 40 : 40) });
+      dirty = false; await load(); select(r.id, "spec"); toast(a === "variant" ? "Alternative created. Write its approach." : "Box added. Fill in its spec.");
+    } else if (a === "delete") { dirty = false; sel = null; await load(); renderInspector(true); toast("Deleted"); }
+    else { await load(); renderInspector(true); toast("Done"); }
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- save / gate actions ---------- */
+async function save() {
+  const st = byId(sel); const body = clone(draft); delete body.ui;
+  if (st.locked_at) { if (!confirm("This box is verified and locked. Changing its spec makes it stale, so it needs re-approval and new checks. Continue?")) return; body._confirm_locked = true; }
+  try { await api(`/api/stage/${sel}`, body); dirty = false; toast("Saved"); await load(); renderInspector(true); } catch (e) { toast(e.message, true); }
+}
+function discard() { renderInspector(true); }
 async function act(a) {
   const st = byId(sel);
   if (a === "approve") {
@@ -547,27 +760,24 @@ async function act(a) {
   if (a === "unlock" && !confirm(`Unlock “${st.spec.title}”? The agent will be able to edit its code again, and downstream boxes go stale.`)) return;
   try {
     if (a === "verify") toast("Running checks…");
-    const res = await api(`/api/${a}/${sel}`, {});
-    if (a === "verify") toast(res.passed ? "All checks passed. Box locked." : "Some checks failed.", !res.passed);
+    const r = await api(`/api/${a}/${sel}`, {});
+    if (a === "verify") { toast(r.passed ? "All checks passed. Box locked." : "Some checks failed.", !r.passed); tab = "checks"; }
     else toast({ approve: "Approved. The agent can implement it now.", unlock: "Unlocked", retry: "More attempts granted" }[a]);
-    await load(); if (sel) fillDrawer(true);
+    await load(); renderInspector(true);
   } catch (e) { toast(e.message, true); }
 }
 
-/* ---------------- rules ---------------- */
-function openRules() {
-  const p = S.policy; $("r-max").value = p.max_attempts; $("r-tests").value = p.min_tests; $("r-inv").value = p.min_invariants; $("r-con").value = p.min_constraints; $("r-opts").checked = !!p.agent_options;
-  $("rules").showModal();
-}
+/* ---------- rules ---------- */
+function openRules() { const p = S.policy; $("r-max").value = p.max_attempts; $("r-tests").value = p.min_tests; $("r-inv").value = p.min_invariants; $("r-con").value = p.min_constraints; $("r-strict").checked = !!p.strict_contracts; $("r-opts").checked = !!p.agent_options; $("rules").showModal(); }
 async function saveRules() {
-  const policy = { max_attempts: +$("r-max").value, min_tests: +$("r-tests").value, min_invariants: +$("r-inv").value, min_constraints: +$("r-con").value, agent_options: $("r-opts").checked };
+  const policy = { max_attempts: +$("r-max").value, min_tests: +$("r-tests").value, min_invariants: +$("r-inv").value, min_constraints: +$("r-con").value, strict_contracts: $("r-strict").checked, agent_options: $("r-opts").checked };
   try { await api("/api/pipeline", { policy }); $("rules").close(); toast("Rules saved"); await load(); } catch (e) { toast(e.message, true); }
 }
 
-document.addEventListener("keydown", e => { if (e.key === "Escape" && sel && !document.querySelector("dialog[open]")) closeDrawer(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.querySelector("dialog[open]") && !e.target.closest("input,textarea")) select(null); });
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
-load().then(() => { const m = location.hash.match(/^#box=(\w+)/); if (m && byId(m[1])) openDrawer(m[1]); });
-setInterval(() => { if (document.visibilityState === "visible" && !dragId) load(true); }, 4000);
+load().then(() => { const m = location.hash.match(/^#box=(\w+)(?:&tab=(\w+))?/); if (m && byId(m[1])) select(m[1], m[2] || "spec"); if (!localStorage.getItem("arx.view.fitted") || location.hash.includes("fit")) { fit(); localStorage.setItem("arx.view.fitted", "1"); } });
+setInterval(() => { if (document.visibilityState === "visible" && !drag) load(true); }, 4000);
 </script>
 </body>
 </html>

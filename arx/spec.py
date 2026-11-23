@@ -22,6 +22,7 @@ DEFAULT_POLICY = {
     "min_invariants": 1,   # properties checked on the real-data output
     "max_attempts": 3,     # failed `arx verify` runs before the stage is BLOCKED and handed back to you
     "agent_options": False,  # may the agent attach suggested answers to its questions?
+    "strict_contracts": True,  # outputs must pin down structure (dataframe columns, array dtype+shape, list item type)
 }
 
 # Answers that mean "nobody actually decided".
@@ -183,7 +184,7 @@ class Project:
         return p
 
     def stage_hash(self, sid: str) -> str:
-        s = {k: v for k, v in self.stage(sid).items() if k not in ("ui",)}
+        s = {k: v for k, v in self.stage(sid).items() if k not in ("ui", "notes")}
         return canonical_hash(s)
 
     # ---------- validation ----------
@@ -215,6 +216,9 @@ class Project:
         for o in outs:
             if not o.get("name") or is_placeholder(o.get("type")):
                 out.append(f"output '{o.get('name', '?')}' needs a name and a type")
+        if pol.get("strict_contracts"):
+            from .contracts import spec_issues
+            out += spec_issues(s)
         if len([c for c in s.get("constraints") or [] if not is_placeholder(c)]) < pol["min_constraints"]:
             out.append(f"constraints: need at least {pol['min_constraints']}")
         tests = s.get("tests") or []

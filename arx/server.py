@@ -11,6 +11,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import yaml
+
 from .banks import BANKS
 from .spec import Project, parse_scalar
 from .state import State
@@ -51,13 +53,37 @@ def snapshot(root: Path) -> dict:
                                 if f.is_file() and f.suffix.lower() in IMG) if art.exists() else [],
         })
     meta = {k: v for k, v in p.data.items() if k != "stages"}
-    return {"pipeline": meta, "policy": p.policy, "kinds": {k: v for k, v in BANKS.items()}, "stages": stages}
+    from .contracts import DTYPES, PORT_TYPES
+    return {"pipeline": meta, "policy": p.policy, "kinds": {k: v for k, v in BANKS.items()}, "stages": stages,
+            "port_types": PORT_TYPES, "dtypes": DTYPES}
 
 
 def clean_stage(body: dict) -> dict:
     """Normalize a stage posted from the UI before writing pipeline.yaml."""
     s = {k: v for k, v in body.items() if v not in (None, "", [], {}) or k in
          ("purpose", "approach", "inputs", "outputs", "decisions", "constraints", "tests", "invariants")}
+    for port in (s.get("inputs") or []) + (s.get("outputs") or []):
+        sc = port.get("schema")
+        if isinstance(sc, dict):
+            sc = {k: v for k, v in sc.items() if v not in (None, "", [], False) or k == "nullable"}
+            for c in sc.get("columns") or []:
+                for k in [k for k, v in c.items() if v in (None, "")]:
+                    c.pop(k)
+            if sc.get("shape") and isinstance(sc["shape"], str):
+                from .contracts import parse_shape
+                sc["shape"] = parse_shape(sc["shape"])
+            for k in ("min_rows", "max_rows", "min_len", "max_len", "min", "max"):
+                if isinstance(sc.get(k), str):
+                    sc[k] = parse_scalar(sc[k])
+            for k in ("rows", "length"):
+                if isinstance(sc.get(k), str) and sc[k].isdigit():
+                    sc[k] = int(sc[k])
+            if sc:
+                port["schema"] = sc
+            else:
+                port.pop("schema", None)
+        if port.get("from") == "":
+            port.pop("from")
     for d in s.get("decisions") or []:
         if isinstance(d.get("answer"), str):
             d["answer"] = parse_scalar(d["answer"]) if d["answer"].strip() else None
@@ -159,8 +185,47 @@ class Handler(BaseHTTPRequestHandler):
             return None
         if parts[:2] == ["api", "stages"]:
             sid = new_stage(p, body.get("title") or "New box", body.get("kind") or "custom")
+            if "x" in body and "y" in body:
+                p.stage(sid)["ui"] = {"x": round(float(body["x"])), "y": round(float(body["y"]))}
             p.save()
             return {"id": sid}
+        if parts[:2] == ["api", "connect"]:
+            src, to = str(body.get("from", "")), str(body.get("to", ""))
+            if "." not in src:
+                raise ValueError("connect needs from=<box>.<output>")
+            up, oname = src.split(".", 1)
+            if up == to:
+                raise ValueError("a box can't feed itself")
+            outp = next((o for o in p.stage(up).get("outputs") or [] if o.get("name") == oname), None)
+            if outp is None:
+                raise ValueError(f"'{up}' has no output '{oname}'")
+            tgt = p.stage(to)
+            ins = tgt.setdefault("inputs", [])
+            if any(i.get("from") == src for i in ins):
+                raise ValueError(f"{src} is already connected to '{to}'")
+            name, n = oname, 2
+            while any(i.get("name") == name for i in ins):
+                name, n = f"{oname}_{n}", n + 1
+            port = {"name": name, "from": src, "type": outp.get("type", "")}
+            if outp.get("schema"):
+                port["schema"] = copy.deepcopy(outp["schema"])
+            ins.append(port)
+            try:
+                p.topo_order()
+            except ValueError:
+                raise ValueError("that arrow would create a cycle")
+            p.save()
+            return {"name": name}
+        if parts[:2] == ["api", "disconnect"]:
+            tgt = p.stage(str(body.get("to")))
+            if body.get("input"):
+                tgt["inputs"] = [i for i in tgt.get("inputs") or [] if i.get("name") != body["input"]]
+            if body.get("dep"):
+                tgt["depends_on"] = [d for d in tgt.get("depends_on") or [] if d != body["dep"]]
+                if not tgt["depends_on"]:
+                    tgt.pop("depends_on")
+            p.save()
+            return None
         if len(parts) != 3 or parts[0] != "api":
             raise ValueError(f"unknown endpoint /{'/'.join(parts)}")
         action, sid = parts[1], parts[2]
@@ -171,10 +236,30 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("stage is verified/locked; changing its spec marks it STALE")
             body.pop("_confirm_locked", None)
             body["id"] = sid
-            for k in ("archived", "variant_of"):
+            for k in ("archived", "variant_of", "ui"):
                 if stage.get(k) and k not in body:
                     body[k] = stage[k]
             p.stage_list[index_of(p, sid)] = clean_stage(body)
+            p.save()
+            return None
+        if action == "move":
+            stage["ui"] = {"x": round(float(body.get("x", 0))), "y": round(float(body.get("y", 0)))}
+            p.save()  # layout only: excluded from the spec hash, never invalidates approval
+            return None
+        if action == "try":
+            from .runner import StageError, try_stage
+            try:
+                return try_stage(p, s, sid, body.get("mode", "custom"), body.get("input"), body.get("params") or {})
+            except StageError as e:
+                raise ValueError(str(e))
+        if action == "add_test":
+            t = {"name": body.get("name") or "case", "input": body.get("input") or {}, "expect": body.get("expect")}
+            if body.get("params"):
+                t["params"] = body["params"]
+            for f in ("input", "params"):
+                if isinstance(t.get(f), str):
+                    t[f] = yaml.safe_load(t[f]) if t[f].strip() else {}
+            stage.setdefault("tests", []).append(t)
             p.save()
             return None
         if action == "approve":

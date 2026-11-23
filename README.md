@@ -10,7 +10,7 @@ Each stage (box) has a spec in `pipeline.yaml`:
 - the **constraints** the code must respect
 - the **checks** that define "correct"
 
-**You drive, the agent implements.** You create every box on a board like Trello. The agent never
+**You drive, the agent implements.** You lay out every box yourself on a flow canvas. The agent never
 proposes stages, methods or parameters. It only asks neutral questions about what you left unspecified,
 and when a box keeps failing it stops and reports back to you.
 
@@ -46,16 +46,20 @@ A gate enforces the spec in Claude Code using hooks, and in Codex using `AGENTS.
   tests, contract checks and invariants on real data, `arx run` executes the pipeline with caching, and
   `arx ui` gives you the boxes and arrows.
 
+![The arx flow editor: boxes connected by typed arrows, each showing its status](docs/flow.png)
+
 ## Quick start
 
 ```bash
-pip install -e .                 # once: installs the `arx` command
-cd examples/text-clustering      # or: arx init my-project --example && cd my-project
-arx                              # what's blocked and what's next
-arx ui                           # the board
+pip install -e .                    # once, in the env you'll run Claude Code from
+
+cd examples/text-clustering && arx ui     # try the example
+# or start your own:
+mkdir ~/my-research && cd ~/my-research && arx ui   # offers to start an empty flow here
 ```
 
-For a new project, also run `git config core.hooksPath .githooks` to turn on the commit-time tamper check.
+`arx` on its own prints what's blocked and what's next. `arx init <dir> --example` creates a copy of the
+example (data included) anywhere you like.
 
 Then, in Claude Code inside that project:
 
@@ -95,22 +99,62 @@ show up in the UI next to the check results.
 | `arx status` · `arx next` · `arx check [stage]` | anyone | what's blocked and why |
 | `arx ask <stage> "q" --key k` | agent | raise a neutral question (blocks the stage; `--option` only if Rules allow) |
 | `arx answer <stage> <key> "value"` | agent/you | record an answer (agent answers are flagged for your review) |
-| `arx approve` · `arx unlock` · `arx retry <stage>` | **you only** | needs an interactive terminal, or use the board |
+| `arx approve` · `arx unlock` · `arx retry <stage>` | **you only** | needs an interactive terminal, or use the UI |
 | `arx scaffold <stage>` | agent | generate the module from the approved spec |
 | `arx verify <stage>` | anyone | tests + contract + invariants; locks on pass |
 | `arx run [stage] [--unverified]` | anyone | run on real data, summarize outputs |
-| `arx ui` | you | the board (Spec → Approve → Building → Needs you → Verified) plus a Flow view, at http://127.0.0.1:8765 |
+| `arx ui` | you | the flow editor at http://127.0.0.1:8765 |
 
-### The board
-Columns follow each box's status, and you can drag a card to make a decision:
-- **Approve → Building** approves the box.
-- **Verified → Building** unlocks it.
-- **Needs you → Building** grants more attempts.
-- **Any column → Archived** retires the box.
+### The flow editor
+- **Boxes and arrows:**
+  - Double-click the canvas (or click **＋ Box**) to add a box.
+  - Drag a box by its header to move it.
+  - Drag an output dot ● onto another box to connect them. The input inherits that output's contract.
+  - Click an arrow to remove it.
+  - Scroll to pan, and pinch or ⌘-scroll to zoom. **Tidy** arranges the boxes left to right.
+- **Inspector:** clicking a box opens it on the right. At the top is its status, with the actions that
+  fit: Approve, Run checks, Unlock, Retry. Below that are five tabs:
+  - **Spec**: approach, decisions and constraints.
+  - **Contract**: typed inputs and outputs. For example, a dataframe declares its columns, dtypes, and
+    whether each column allows nulls or must be unique. An array declares its dtype and shape. A list
+    declares its item type and length.
+  - **Checks**: test cases, invariants, the last run's results, and a preview of the real-data output.
+  - **Try it**: run the box on your own JSON input or on the real upstream data, see the output as
+    tables and stats, and save what you tried as a test case.
+  - **Box**: insert a box before it, add a box after it, try an alternative approach, archive or delete it.
+| Spec: your method and decisions | Contract: typed, enforced inputs and outputs |
+|---|---|
+| ![Spec tab](docs/spec.png) | ![Contract tab](docs/contract.png) |
 
-Click a card to edit its spec. The drawer also has **Insert a box before**, **Add a box after**,
-**Try an alternative approach**, and **Archive**. Under **Rules** you set the attempt limit, the
-minimum checks per box, and whether the agent may attach suggested answers (off by default).
+- **Rules:** set the attempt limit, the minimum number of checks per box, strict contracts, and whether
+  the agent may suggest answers.
+
+### Contracts
+Every port has a type and a schema. arx checks them on every test and every real run, before
+any of your own checks run:
+
+```yaml
+outputs:
+  - name: docs
+    type: dataframe
+    schema:
+      rows: n                     # symbol: must agree with other ports of this box
+      exact_columns: true
+      columns:
+        - {name: id,   dtype: str, nullable: false, unique: true}
+        - {name: text, dtype: str, nullable: false}
+  - name: embeddings
+    type: ndarray
+    schema: {dtype: float32, shape: [n, "*"], finite: true}
+```
+
+With strict contracts on (the default), a box can't be approved until each output is fully pinned down:
+- a dataframe declares its columns
+- an array declares its dtype and shape
+- a list declares its item type
+
+In test cases and in Try it, inputs written as JSON are converted to the declared type. A list of
+row objects becomes a DataFrame, and nested lists become an array.
 
 ## How it's enforced, and its limits
 
@@ -121,6 +165,9 @@ minimum checks per box, and whether the agent may attach suggested answers (off 
 | Blocks `arx approve/unlock` and shell writes to protected files | ✅ PreToolUse hook (pattern match) | ❌ |
 | Approve/unlock need a real TTY | ✅ | ✅ |
 | Tamper detection via file hashes (`arx check --ci`, pre-commit) | ✅ | ✅ |
+
+If `arx` isn't installed in the environment Claude Code runs in, the hooks refuse every edit and shell
+command rather than letting them through unchecked.
 
 The hooks keep a cooperative agent from drifting. They are not a sandbox: a determined process
 could still write files in ways the shell patterns don't catch. Hash-based tamper detection is the

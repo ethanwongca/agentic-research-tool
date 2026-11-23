@@ -7,18 +7,21 @@ researcher has already designed, not to design it. **The researcher drives the i
 
 ## Hard rules
 0. **Don't drive ideas.** Never propose stages, methods, models, parameters, metrics or new checks. The
-   researcher adds every box on the board. You may point out *that* something is unspecified, as a
+   researcher adds every box in the flow. You may point out *that* something is unspecified, as a
    neutral question, but not *what* it should be.
 1. **Never make a research decision the spec leaves open.** Models, parameters, thresholds, libraries,
    preprocessing steps, seeds, how edge cases are handled: if it isn't specified, STOP and ask the researcher.
-   Record the question with `./arx ask <stage> "<q>" --key <param>` (no `--option` unless the policy
-   allows it) and their answer with `./arx answer <stage> <key> "<answer>"`. Never answer on their behalf.
-2. **Only implement stages that `./arx status` shows as APPROVED or FAILING**, and only after every upstream
-   stage is VERIFIED. Start with `./arx scaffold <stage>`, which generates the module from the spec.
+   Record the question with `arx ask <stage> "<q>" --key <param>` (no `--option` unless the policy
+   allows it) and their answer with `arx answer <stage> <key> "<answer>"`. Never answer on their behalf.
+2. **Only implement stages that `arx status` shows as APPROVED or FAILING**, and only after every upstream
+   stage is VERIFIED. Start with `arx scaffold <stage>`, which generates the module from the spec.
 3. **Read every choice from `params`**, never hardcode it. `run(inputs, params, ctx)` returns a dict with
-   exactly the declared outputs.
-4. **A stage is done only when `./arx verify <stage>` passes.** It is then LOCKED: never edit a VERIFIED
-   stage's files. If you think verified code is wrong, explain why and ask the researcher to `./arx unlock`.
+   exactly the declared outputs, matching their **contract**: DataFrame columns, dtypes and null/unique rules,
+   array dtype and shape, list item types. Symbols like `n` must agree across inputs and outputs. arx checks
+   this on every test and every real run; never coerce data just to get past it, and report any mismatch you
+   think is in the contract itself.
+4. **A stage is done only when `arx verify <stage>` passes.** It is then LOCKED: never edit a VERIFIED
+   stage's files. If you think verified code is wrong, explain why and ask the researcher to `arx unlock`.
 5. **Never weaken checks.** Don't edit `pipeline.yaml` or `.arx/`, and never run `arx approve`/`arx unlock`.
    Those belong to the researcher.
 6. Keep stage logic in the stage's declared `files:`, so verification and locking cover it.
@@ -29,21 +32,21 @@ researcher has already designed, not to design it. **The researcher drives the i
 ## Commands
 | command | who | what |
 |---|---|---|
-| `./arx status` / `./arx next` | anyone | what's blocked, and what to do next |
-| `./arx check [stage]` | anyone | everything still unspecified |
-| `./arx ask` / `./arx answer` | agent | raise a question / record the researcher's answer |
-| `./arx scaffold <stage>` | agent | generate the stage boilerplate from the approved spec |
-| `./arx run [stage]` | anyone | run on real data, print output summaries |
-| `./arx verify <stage>` | anyone | run tests + invariants; lock on pass |
-| `./arx ui` | researcher | boxes-and-arrows editor: fill in specs, answer, approve, unlock |
-| `./arx approve` / `./arx unlock` / `./arx retry` | researcher only | gate transitions (interactive terminal) |
+| `arx status` / `arx next` | anyone | what's blocked, and what to do next |
+| `arx check [stage]` | anyone | everything still unspecified |
+| `arx ask` / `arx answer` | agent | raise a question / record the researcher's answer |
+| `arx scaffold <stage>` | agent | generate the stage boilerplate from the approved spec |
+| `arx run [stage]` | anyone | run on real data, print output summaries |
+| `arx verify <stage>` | anyone | run tests + invariants; lock on pass |
+| `arx ui` | researcher | boxes-and-arrows editor: fill in specs, answer, approve, unlock |
+| `arx approve` / `arx unlock` / `arx retry` | researcher only | gate transitions (interactive terminal) |
 
 ## Review a spec ("is this enough?")
 For each non-verified stage, ask: could I implement this without making any research decision myself?
 Look for unpinned method details, uncovered edge cases, underspecified output types or shapes, and holes
-in the checks. Raise each one as a **neutral** question with `./arx ask` (no suggested answers, no new
+in the checks. Raise each one as a **neutral** question with `arx ask` (no suggested answers, no new
 stages), ask the researcher, record their answers, then list what's still open per stage.
 
 ## Build the next stage
-`./arx next` → if APPROVED: `./arx scaffold` → implement → `./arx verify` → fix the implementation until
+`arx next` → if APPROVED: `arx scaffold` → implement → `arx verify` → fix the implementation until
 it passes → stop and report. If DRAFT/READY/BLOCKED: stop and hand back to the researcher.
