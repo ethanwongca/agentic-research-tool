@@ -1,5 +1,5 @@
 name: text-clustering
-description: "Cluster short documents by topic: clean -> embed -> cluster."
+description: 'Cluster short documents by topic: clean -> embed -> cluster.'
 policy:
   stage_dir: stages
   min_constraints: 1
@@ -8,128 +8,225 @@ policy:
   max_attempts: 3
   agent_options: false
   strict_contracts: true
+  agent: codex
 stages:
-  - id: preprocess
-    title: Data processing
-    kind: data_processing
-    ui: {x: 60, y: 120}
-    purpose: Turn the raw CSV into a clean, deduplicated table of documents with stable ids.
-    approach: |
-      Read the CSV with pandas (dtype=str). Keep `id` and `text`. Normalize text with unicode NFKC,
-      lowercase, collapse all whitespace runs to a single space, strip. Drop rows whose cleaned text is
-      empty or shorter than params.min_chars. Deduplicate on the cleaned text, keeping the first occurrence.
-      Preserve input order and reset the index.
-    inputs: []
-    outputs:
-      - name: docs
-        type: dataframe
-        description: one row per document, in input order
-        schema:
-          rows: n
-          min_rows: 1
-          exact_columns: true
-          columns:
-            - {name: id, dtype: str, nullable: false, unique: true}
-            - {name: text, dtype: str, nullable: false, unique: true}
-    decisions:
-      - key: path
-        question: Path to the CSV, relative to the project root?
-        answer: data/docs.csv
-      - key: source
-        question: Where does the raw data come from (path/URL) and in what format?
-        answer: data/docs.csv (UTF-8 CSV with columns id,text)
-      - key: record_unit
-        question: What is one record (row, document, sentence, ...)?
-        answer: one CSV row = one document
-      - key: fields
-        question: Which fields are kept, and which one is the primary content?
-        answer: id and text; text is the content
-      - key: cleaning
-        question: Exactly which cleaning/normalization steps (lowercase, strip HTML, unicode NFKC, ...)?
-        answer: NFKC, lowercase, collapse whitespace, strip. No stemming, no stopword removal.
-      - key: dedup
-        question: How are duplicates defined, and what happens to them?
-        answer: exact match on cleaned text; keep first occurrence
-      - key: missing
-        question: How are missing / empty / malformed records handled (drop, impute, fail loudly)?
-        answer: drop empty/too-short texts; a file without a text column should raise ValueError
-      - key: filtering
-        question: Inclusion / exclusion criteria (length limits, language, date range, ...)?
-        answer: keep texts with at least min_chars characters after cleaning
-      - key: min_chars
-        question: Minimum cleaned text length?
-        answer: 3
-      - key: sample
-        question: Full dataset or a sample? If a sample, size and seed.
-        answer: full dataset
-    constraints:
-      - input order is preserved
-      - no network access
-    tests:
-      - name: cleans and dedups
-        input: {}
-        params: {path: tests/fixtures/tiny.csv}
-        expect: "out['docs']['text'].tolist() == ['hello world', 'cats are great'] and out['docs']['id'].tolist() == ['1', '3']"
-    invariants:
-      - name: no short texts
-        expr: "out['docs']['text'].str.len().min() >= params['min_chars']"
-      - name: kept most of the data
-        expr: len(out['docs']) >= 20
-
-  - id: embed
-    title: Embedding
-    kind: embedding
-    ui: {x: 420, y: 120}
-    purpose: Map each document's text to a fixed-size vector.
-    approach: TBD
-    inputs:
-      - name: docs
-        from: preprocess.docs
-        type: dataframe
-        schema:
-          rows: n
-          columns:
-            - {name: text, dtype: str, nullable: false}
-    outputs:
-      - name: embeddings
-        type: ndarray
-        description: row i embeds docs.text[i]
-        schema: {dtype: float32, shape: [n, "*"], finite: true}
-    decisions:
-      - key: model
-        question: Which embedding model, exact name and version?
-        answer: null
-    constraints:
-      - row order matches docs
-      - deterministic for the same input
-    tests:
-      - name: one row per doc
-        input:
-          docs: [{id: "1", text: a cat}, {id: "2", text: a dog}, {id: "3", text: stock markets fell}]
-        expect: out['embeddings'].shape[0] == 3
-    invariants:
-      - name: not all identical
-        expr: "len(np.unique(out['embeddings'].round(4), axis=0)) > 1"
-
-  - id: cluster
-    title: Clustering
-    kind: clustering
-    ui: {x: 780, y: 120}
-    purpose: Group documents into topics.
-    approach: ""
-    inputs:
-      - name: embeddings
-        from: embed.embeddings
-        type: ndarray
-        schema: {shape: [n, "*"]}
-    outputs:
-      - name: labels
-        type: ndarray
-        description: cluster id per document, -1 = noise
-        schema: {dtype: int, shape: [n]}
-    decisions: []
-    constraints: []
-    tests: []
-    invariants:
-      - name: more than one cluster
-        expr: len(set(out['labels'].tolist())) > 1
+- id: preprocess
+  title: Data processing
+  kind: data_processing
+  ui:
+    x: 80
+    y: 80
+  purpose: Turn the raw CSV into a clean, deduplicated table of documents with stable ids.
+  approach: |
+    Read the CSV with pandas (dtype=str). Keep `id` and `text`. Normalize text with unicode NFKC,
+    lowercase, collapse all whitespace runs to a single space, strip. Drop rows whose cleaned text is
+    empty or shorter than params.min_chars. Deduplicate on the cleaned text, keeping the first occurrence.
+    Preserve input order and reset the index.
+  inputs: []
+  outputs:
+  - name: docs
+    type: dataframe
+    description: one row per document, in input order
+    schema:
+      rows: n
+      min_rows: 1
+      exact_columns: true
+      columns:
+      - name: id
+        dtype: str
+        nullable: false
+        unique: true
+      - name: text
+        dtype: str
+        nullable: false
+        unique: true
+  decisions:
+  - key: path
+    question: Path to the CSV, relative to the project root?
+    answer: data/docs.csv
+  - key: source
+    question: Where does the raw data come from (path/URL) and in what format?
+    answer: data/docs.csv (UTF-8 CSV with columns id,text)
+  - key: record_unit
+    question: What is one record (row, document, sentence, ...)?
+    answer: one CSV row = one document
+  - key: fields
+    question: Which fields are kept, and which one is the primary content?
+    answer: id and text; text is the content
+  - key: cleaning
+    question: Exactly which cleaning/normalization steps (lowercase, strip HTML, unicode NFKC, ...)?
+    answer: NFKC, lowercase, collapse whitespace, strip. No stemming, no stopword removal.
+  - key: dedup
+    question: How are duplicates defined, and what happens to them?
+    answer: exact match on cleaned text; keep first occurrence
+  - key: missing
+    question: How are missing / empty / malformed records handled (drop, impute, fail loudly)?
+    answer: drop empty/too-short texts; a file without a text column should raise ValueError
+  - key: filtering
+    question: Inclusion / exclusion criteria (length limits, language, date range, ...)?
+    answer: keep texts with at least min_chars characters after cleaning
+  - key: min_chars
+    question: Minimum cleaned text length?
+    answer: 3
+  - key: sample
+    question: Full dataset or a sample? If a sample, size and seed.
+    answer: full dataset
+  constraints:
+  - input order is preserved
+  - no network access
+  tests:
+  - name: cleans and dedups
+    input: {}
+    params:
+      path: tests/fixtures/tiny.csv
+    expect: out['docs']['text'].tolist() == ['hello world', 'cats are great'] and out['docs']['id'].tolist()
+      == ['1', '3']
+  invariants:
+  - name: no short texts
+    expr: out['docs']['text'].str.len().min() >= params['min_chars']
+  - name: kept most of the data
+    expr: len(out['docs']) >= 20
+- id: embed
+  title: Embedding
+  kind: embedding
+  ui:
+    x: 459
+    y: -84
+  purpose: Map each document's text to a fixed-size vector.
+  approach: TBD
+  inputs:
+  - name: docs
+    from: preprocess.docs
+    type: dataframe
+    schema:
+      rows: n
+      columns:
+      - name: text
+        dtype: str
+        nullable: false
+  outputs:
+  - name: embeddings
+    type: ndarray
+    description: row i embeds docs.text[i]
+    schema:
+      dtype: float32
+      shape:
+      - n
+      - '*'
+      finite: true
+  decisions:
+  - key: model
+    question: Which embedding model, exact name and version?
+    answer: null
+  constraints:
+  - row order matches docs
+  - deterministic for the same input
+  tests:
+  - name: one row per doc
+    input:
+      docs:
+      - id: '1'
+        text: a cat
+      - id: '2'
+        text: a dog
+      - id: '3'
+        text: stock markets fell
+    expect: out['embeddings'].shape[0] == 3
+  invariants:
+  - name: not all identical
+    expr: len(np.unique(out['embeddings'].round(4), axis=0)) > 1
+- id: cluster
+  title: Clustering
+  kind: clustering
+  ui:
+    x: 856
+    y: -20
+  purpose: Group documents into topics.
+  approach: ''
+  inputs:
+  - name: embeddings
+    from: embed.embeddings
+    type: ndarray
+    schema:
+      shape:
+      - n
+      - '*'
+  - name: docs
+    from: preprocess.docs
+    type: dataframe
+    schema:
+      rows: n
+      min_rows: 1
+      exact_columns: true
+      columns:
+      - name: id
+        dtype: str
+        nullable: false
+        unique: true
+      - name: text
+        dtype: str
+        nullable: false
+        unique: true
+  outputs:
+  - name: labels
+    type: ndarray
+    description: cluster id per document, -1 = noise
+    schema:
+      dtype: int
+      shape:
+      - n
+  decisions: []
+  constraints: []
+  tests: []
+  invariants:
+  - name: more than one cluster
+    expr: len(set(out['labels'].tolist())) > 1
+- id: untitled_box
+  title: Untitled box
+  kind: custom
+  purpose: ''
+  approach: ''
+  inputs:
+  - name: labels
+    from: cluster.labels
+    type: ndarray
+    schema:
+      dtype: int
+      shape:
+      - n
+  outputs: []
+  decisions: []
+  constraints: []
+  tests: []
+  invariants: []
+  ui:
+    x: 638
+    y: 355
+- id: untitled_box2
+  title: Untitled box
+  kind: custom
+  purpose: ''
+  approach: ''
+  inputs: []
+  outputs: []
+  decisions: []
+  constraints: []
+  tests: []
+  invariants: []
+  ui:
+    x: 201
+    y: 344
+- id: untitled_box3
+  title: Untitled box
+  kind: custom
+  purpose: ''
+  approach: ''
+  inputs: []
+  outputs: []
+  decisions: []
+  constraints: []
+  tests: []
+  invariants: []
+  ui:
+    x: 338
+    y: 553

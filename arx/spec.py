@@ -22,7 +22,8 @@ DEFAULT_POLICY = {
     "min_invariants": 1,   # properties checked on the real-data output
     "max_attempts": 3,     # failed `arx verify` runs before the stage is BLOCKED and handed back to you
     "agent_options": False,  # may the agent attach suggested answers to its questions?
-    "strict_contracts": True,  # outputs must pin down structure (dataframe columns, array dtype+shape, list item type)
+    "strict_contracts": True,
+    "agent": "claude",       # what the Build button runs: claude | codex | a custom command  # outputs must pin down structure (dataframe columns, array dtype+shape, list item type)
 }
 
 # Answers that mean "nobody actually decided".
@@ -225,6 +226,8 @@ class Project:
         if len(tests) < pol["min_tests"]:
             out.append(f"tests: need at least {pol['min_tests']} hand-written test case(s) (input -> expected)")
         for t in tests:
+            if isinstance(t.get("input"), str) or isinstance(t.get("params"), str):
+                out.append(f"test '{t.get('name', '?')}' input/params isn't valid JSON")
             if is_placeholder(t.get("expect")) and not t.get("raises"):
                 out.append(f"test '{t.get('name', '?')}' has no `expect` expression or `raises`")
         invs = s.get("invariants") or []

@@ -1,144 +1,65 @@
-# agentic-research (`arx`)
+# arx: agentic research, with the researcher in charge
 
-A tool that keeps research code written by an agent from drifting away from what the researcher intended.
+**You design the pipeline. The agent only writes code you've approved, exactly as you specified, and
+can't touch it again once it passes your checks.**
 
-**The researcher designs the pipeline. The agent writes only the code, and only within your spec.**
-Each stage (box) has a spec in `pipeline.yaml`:
+Lay out your research pipeline as boxes and arrows on a canvas. Each box is a step you specify:
+what it's for, how it must be done, the choices it depends on, and what "correct" means.
+Claude Code (or Codex) implements one approved box at a time. If something is unspecified, it has to
+stop and ask you. It never proposes methods or decides things for you.
 
-- the **approach**: how the stage must be done
-- the **decisions** you have to make for this kind of stage
-- the **constraints** the code must respect
-- the **checks** that define "correct"
-
-**You drive, the agent implements.** You lay out every box yourself on a flow canvas. The agent never
-proposes stages, methods or parameters. It only asks neutral questions about what you left unspecified,
-and when a box keeps failing it stops and reports back to you.
-
-A gate enforces the spec in Claude Code using hooks, and in Codex using `AGENTS.md` plus a git pre-commit check:
-
-```
- draft ──(you fill in every box)──▶ ready ──(you approve)──▶ approved ──(agent implements,
-   ▲                                                                     `arx verify` passes)──▶ verified 🔒
-   └── agent hits something unspecified: it must STOP, `arx ask`, and ask you
-```
-
-- **No guessing.** If a stage's approach, outputs, constraints, tests or required questions are missing,
-  the agent can't write that stage's code. The denial message tells it to stop and ask you.
-- **You fill in the blanks.** Each `kind` comes with questions that have to be answered.
-  - `embedding` asks for the model, the exact input text, truncation and normalization.
-  - `clustering` asks for the algorithm, distance metric, how k is chosen, any reduction step, noise handling, seed and evaluation metric.
-
-  Answers reach the code as `params[key]`, so the agent can't hardcode its own choices.
-- **The agent can say what's unclear but can't decide it.** `/arx-review` has the agent look for gaps
-  and weak checks in the spec. It records them with `arx ask`, offering options, then asks you. Only
-  you can approve.
-- **Verified means locked.** When a stage's tests and invariants pass, its files are hashed and locked.
-  The agent can't edit them, and edits that slip through show up as `TAMPERED`. Changing an
-  upstream stage marks downstream stages `STALE`.
-- **Failures come back to you as boxes.** After `max_attempts` failed verifies (3 by default), a box
-  moves to **Needs you** and the agent is locked out. You choose what happens next:
-  - revise the box
-  - **insert a box before** it, which rewires its inputs through the new box
-  - **try an alternative**, a sibling box with the same contract and checks but your new method. Use
-    "Use this instead" to rewire downstream boxes to it and archive the original.
-  - give the agent more attempts
-- **No boilerplate.** `arx scaffold` generates each stage module from the spec. `arx verify` runs the
-  tests, contract checks and invariants on real data, `arx run` executes the pipeline with caching, and
-  `arx ui` gives you the boxes and arrows.
-
-![The arx flow editor: boxes connected by typed arrows, each showing its status](docs/flow.png)
+![The arx canvas: boxes connected by typed arrows, with a sticky note](docs/flow.png)
 
 ## Quick start
 
 ```bash
-pip install -e .                    # once, in the env you'll run Claude Code from
-
-cd examples/text-clustering && arx ui     # try the example
-# or start your own:
-mkdir ~/my-research && cd ~/my-research && arx ui   # offers to start an empty flow here
+pip install -e .                      # once, in the environment you run Claude Code from
+cd examples/text-clustering
+arx ui                                # opens the canvas in your browser
 ```
 
-`arx` on its own prints what's blocked and what's next. `arx init <dir> --example` creates a copy of the
-example (data included) anywhere you like.
+For your own project, run `arx ui` in any folder. It offers to start an empty pipeline there.
 
-Then, in Claude Code inside that project:
+## The loop
 
-- `/arx-review`: the agent critiques the spec and asks you about every gap
-- `/arx-build`: the agent implements the next approved stage until `arx verify` passes, then stops
+1. **Lay out boxes.** Press `Tab` or double-click to open quick add. Drag from an output socket ● onto
+   a box to connect, or drop it on empty canvas to add a new box that's already wired up. Sockets and
+   wires are colored by data type. Use sticky notes (`N`) for ideas and open questions.
+2. **Specify each box.** The inspector walks you through it, and a checklist shows what's still missing.
+3. **Approve** the box.
+4. **Build.** Click **Build with Claude**, and the inspector streams what the agent is doing. You can
+   also run `/arx-build` inside Claude Code. **Approve & build** does steps 3 and 4 in one click.
+5. **Checks pass → the box locks** 🔒. If it keeps failing, it comes back to you with options:
+   - revise the box
+   - insert a box before it
+   - try an alternative approach
+   - give the agent more attempts
 
-Codex reads the same protocol from `AGENTS.md`.
+![Inspector: a guided spec with a checklist of what's missing](docs/spec.png)
 
-A complete example lives in [examples/text-clustering](examples/text-clustering):
-`preprocess` is fully specified, while `embed` and `cluster` still have gaps for you to fill in.
+### What you specify in a box
 
-## A stage spec
-
-```yaml
-- id: embed
-  kind: embedding                 # adds required questions: model, input_text, max_tokens, normalize
-  purpose: Map each cleaned text to a fixed-size vector.
-  approach: Use sentence-transformers all-MiniLM-L6-v2, batch 64, L2-normalize.
-  inputs:  [{name: texts, from: preprocess.texts, type: "list[str]"}]   # the arrow
-  outputs: [{name: embeddings, type: ndarray, description: "(n, 384) float32"}]
-  decisions:
-    - {key: model, question: Which model?, answer: all-MiniLM-L6-v2}
-  constraints: [row order matches input texts]
-  tests:        # hand-made cases: input -> expected
-    - {name: one row per text, input: {texts: [a, b]}, expect: "out['embeddings'].shape[0] == 2"}
-  invariants:   # must hold on the REAL upstream data
-    - {name: finite, expr: "bool(np.isfinite(out['embeddings']).all())"}
-```
-
-A stage module is `def run(inputs, params, ctx=None) -> dict`. Plots written to `ctx.artifact_dir`
-show up in the UI next to the check results.
-
-## Commands
-
-| command | who | |
+| | What it is | Enforced how |
 |---|---|---|
-| `arx status` · `arx next` · `arx check [stage]` | anyone | what's blocked and why |
-| `arx ask <stage> "q" --key k` | agent | raise a neutral question (blocks the stage; `--option` only if Rules allow) |
-| `arx answer <stage> <key> "value"` | agent/you | record an answer (agent answers are flagged for your review) |
-| `arx approve` · `arx unlock` · `arx retry <stage>` | **you only** | needs an interactive terminal, or use the UI |
-| `arx scaffold <stage>` | agent | generate the module from the approved spec |
-| `arx verify <stage>` | anyone | tests + contract + invariants; locks on pass |
-| `arx run [stage] [--unverified]` | anyone | run on real data, summarize outputs |
-| `arx ui` | you | the flow editor at http://127.0.0.1:8765 |
+| **Purpose** | One sentence: what the box produces and why | Required before approval |
+| **Approach** | Your method, precise enough that two people would write the same code | Required; the agent implements it literally |
+| **Decisions** | Choices the code must not make itself (model, k, seed…). The box's kind adds required ones. | Passed to the code as `params["key"]`, so they can't be hardcoded |
+| **Constraints** | Rules that are hard to test, like *no network access* or *keep input order* | The agent must obey them. Use **→ check** to turn one into an invariant |
+| **Contract** | Typed inputs and outputs: dataframe columns and dtypes, array shape, list item type | Checked on every run |
+| **Tests** | Your hand-made input → expected output | Must pass to lock |
+| **Invariants** | Properties that hold on the real data | Must pass to lock |
 
-### The flow editor
-- **Boxes and arrows:**
-  - Double-click the canvas (or click **＋ Box**) to add a box.
-  - Drag a box by its header to move it.
-  - Drag an output dot ● onto another box to connect them. The input inherits that output's contract.
-  - Click an arrow to remove it.
-  - Scroll to pan, and pinch or ⌘-scroll to zoom. **Tidy** arranges the boxes left to right.
-- **Inspector:** clicking a box opens it on the right. At the top is its status, with the actions that
-  fit: Approve, Run checks, Unlock, Retry. Below that are five tabs:
-  - **Spec**: approach, decisions and constraints.
-  - **Contract**: typed inputs and outputs. For example, a dataframe declares its columns, dtypes, and
-    whether each column allows nulls or must be unique. An array declares its dtype and shape. A list
-    declares its item type and length.
-  - **Checks**: test cases, invariants, the last run's results, and a preview of the real-data output.
-  - **Try it**: run the box on your own JSON input or on the real upstream data, see the output as
-    tables and stats, and save what you tried as a test case.
-  - **Box**: insert a box before it, add a box after it, try an alternative approach, archive or delete it.
-| Spec: your method and decisions | Contract: typed, enforced inputs and outputs |
-|---|---|
-| ![Spec tab](docs/spec.png) | ![Contract tab](docs/contract.png) |
-
-- **Rules:** set the attempt limit, the minimum number of checks per box, strict contracts, and whether
-  the agent may suggest answers.
+![Contract tab: typed, enforced inputs and outputs](docs/contract.png)
 
 ### Contracts
-Every port has a type and a schema. arx checks them on every test and every real run, before
-any of your own checks run:
+Every arrow carries a typed value. arx checks it on every test and every real run:
 
 ```yaml
 outputs:
   - name: docs
     type: dataframe
     schema:
-      rows: n                     # symbol: must agree with other ports of this box
+      rows: n                   # a symbol: must match the other ports of this box
       exact_columns: true
       columns:
         - {name: id,   dtype: str, nullable: false, unique: true}
@@ -148,27 +69,59 @@ outputs:
     schema: {dtype: float32, shape: [n, "*"], finite: true}
 ```
 
-With strict contracts on (the default), a box can't be approved until each output is fully pinned down:
-- a dataframe declares its columns
-- an array declares its dtype and shape
-- a list declares its item type
+### Try it
+Any built box can be run from the inspector, either on your own JSON input or on the real upstream data.
+DataFrames come back as tables, arrays as stats, and labels as a bar chart. If you like what you see,
+save the input as a test case.
 
-In test cases and in Try it, inputs written as JSON are converted to the declared type. A list of
-row objects becomes a DataFrame, and nested lists become an array.
+## How Build connects to Claude
+
+**You don't need an MCP server.** The Build button runs Claude Code headless in your project
+(`claude -p … --permission-mode acceptEdits`) and streams its progress into the inspector.
+
+Because Claude runs inside the project, its hooks still apply:
+- it can only edit files of approved boxes
+- it can't edit `pipeline.yaml`
+- it can't approve or unlock anything
+
+To use Codex or another CLI agent instead, change **Who builds** in Rules.
+
+## Canvas controls
+
+| | |
+|---|---|
+| `Tab` / double-click | quick add: search for a box kind or a sticky note |
+| Drag an output socket ● onto a box | connect that output |
+| Drag an output socket ● into empty space | add a new box that's already connected |
+| Drag the pink **+** onto a box | connect (you pick the output), or "run after" for boxes without outputs |
+| `V` select · `B` box · `N` note · `A` arrow | tools, also in the top dock |
+| Drag a box | move it |
+| Click an arrow | remove it |
+| Double-click a note | edit it; selected notes have colors and delete |
+| Scroll / `Space`+drag | pan |
+| `⌘`+scroll | zoom |
+| `⇧1` | fit to screen |
+
+## Commands
+
+| command | who | |
+|---|---|---|
+| `arx ui` | you | the canvas, at http://127.0.0.1:8765 |
+| `arx` · `arx status` · `arx check [box]` | anyone | what's blocked and why |
+| `arx approve` · `arx unlock` · `arx retry <box>` | **you only** | needs a real terminal (or use the UI) |
+| `arx ask <box> "q" --key k` · `arx answer <box> k "v"` | agent | raise a neutral question / relay your answer |
+| `arx scaffold <box>` · `arx verify <box>` · `arx run` | agent / anyone | generate the module, run checks, run the pipeline |
+| `arx init <dir> [--example]` | you | set up a project (hooks, `AGENTS.md`, slash commands) |
 
 ## How it's enforced, and its limits
 
 | layer | Claude Code | Codex |
 |---|---|---|
-| Context: protocol + live status injected every turn | ✅ SessionStart / UserPromptSubmit hooks | `AGENTS.md` |
-| Blocks edits to the spec, `.arx/`, and unapproved or locked stage files | ✅ PreToolUse hook | ❌ (instructions only) |
-| Blocks `arx approve/unlock` and shell writes to protected files | ✅ PreToolUse hook (pattern match) | ❌ |
-| Approve/unlock need a real TTY | ✅ | ✅ |
-| Tamper detection via file hashes (`arx check --ci`, pre-commit) | ✅ | ✅ |
+| Protocol and live status injected every turn | ✅ hooks | `AGENTS.md` |
+| Blocks edits to the spec, `.arx/`, and unapproved or locked code | ✅ PreToolUse hook | instructions only |
+| Approve, unlock and retry are researcher-only | ✅ | ✅ (needs a real terminal) |
+| Tamper detection via file hashes (pre-commit) | ✅ | ✅ |
 
-If `arx` isn't installed in the environment Claude Code runs in, the hooks refuse every edit and shell
-command rather than letting them through unchecked.
-
-The hooks keep a cooperative agent from drifting. They are not a sandbox: a determined process
-could still write files in ways the shell patterns don't catch. Hash-based tamper detection is the
-backstop. Saving from the UI rewrites `pipeline.yaml` and drops YAML comments.
+The hooks keep a cooperative agent from drifting. They are not a sandbox, and hash-based tamper
+detection is the backstop. If `arx` isn't installed where Claude Code runs, the hooks refuse edits
+rather than letting them through unchecked.

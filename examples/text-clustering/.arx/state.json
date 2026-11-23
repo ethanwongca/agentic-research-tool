@@ -1,0 +1,12 @@
+{
+  "approvals": {
+    "preprocess": {
+      "spec_hash": "7b4f38c0f5b29bb7",
+      "at": "2026-11-23T18:20:11"
+    }
+  },
+  "locks": {},
+  "attempts": {
+    "preprocess": 0
+  }
+}
