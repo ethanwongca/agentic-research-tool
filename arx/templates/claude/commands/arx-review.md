@@ -19,6 +19,6 @@ non-verified stages if empty).
    - Never suggest new stages, splitting stages, or different methods.
 4. Ask the researcher the questions with AskUserQuestion (up to 4 at a time). Record their answers
    verbatim: `arx answer <stage> <key-or-index> "<answer>"`.
-5. Finish with a per-stage list of what's still open, and remind the researcher to approve on the board (`arx ui`).
+5. Finish with a per-stage list of what's still open, and remind the researcher to approve in the flow (`arx ui`).
 
 Never answer a question yourself, never edit pipeline.yaml, and never write stage code here.

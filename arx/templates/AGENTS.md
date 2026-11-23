@@ -7,7 +7,7 @@ researcher has already designed, not to design it. **The researcher drives the i
 
 ## Hard rules
 0. **Don't drive ideas.** Never propose stages, methods, models, parameters, metrics or new checks. The
-   researcher adds every box on the board. You may point out *that* something is unspecified, as a
+   researcher adds every box in the flow. You may point out *that* something is unspecified, as a
    neutral question, but not *what* it should be.
 1. **Never make a research decision the spec leaves open.** Models, parameters, thresholds, libraries,
    preprocessing steps, seeds, how edge cases are handled: if it isn't specified, STOP and ask the researcher.
@@ -16,7 +16,10 @@ researcher has already designed, not to design it. **The researcher drives the i
 2. **Only implement stages that `arx status` shows as APPROVED or FAILING**, and only after every upstream
    stage is VERIFIED. Start with `arx scaffold <stage>`, which generates the module from the spec.
 3. **Read every choice from `params`**, never hardcode it. `run(inputs, params, ctx)` returns a dict with
-   exactly the declared outputs.
+   exactly the declared outputs, matching their **contract**: DataFrame columns, dtypes and null/unique rules,
+   array dtype and shape, list item types. Symbols like `n` must agree across inputs and outputs. arx checks
+   this on every test and every real run; never coerce data just to get past it, and report any mismatch you
+   think is in the contract itself.
 4. **A stage is done only when `arx verify <stage>` passes.** It is then LOCKED: never edit a VERIFIED
    stage's files. If you think verified code is wrong, explain why and ask the researcher to `arx unlock`.
 5. **Never weaken checks.** Don't edit `pipeline.yaml` or `.arx/`, and never run `arx approve`/`arx unlock`.

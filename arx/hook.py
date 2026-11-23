@@ -132,7 +132,7 @@ it overrides your own judgment. Rules:
 - You implement; the researcher drives. Never propose stages, methods, models, parameters or thresholds,
   and never pick ones the spec leaves open. If something is unspecified, STOP and ask a neutral question
   (AskUserQuestion, no suggested answers), then record it with `arx ask` / `arx answer`.
-- The researcher creates every box on the board. You never add, split or redesign stages.
+- The researcher creates every box in the flow. You never add, split or redesign stages.
 - If verification keeps failing, the stage BLOCKS. Report facts (failing checks, errors, what you tried), not ideas.
 - Only implement stages that are APPROVED or FAILING, in pipeline order. Start with `arx scaffold <stage>`.
 - Read every researcher choice from `params`; do not hardcode them.

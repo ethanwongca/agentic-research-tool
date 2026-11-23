@@ -7,4 +7,4 @@ policy:
   min_invariants: 1
   max_attempts: 3
   agent_options: false
-stages: []   # add boxes on the board: arx ui
+stages: []   # add boxes in the flow: arx ui

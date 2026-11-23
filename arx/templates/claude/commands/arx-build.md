@@ -11,5 +11,5 @@ description: Implement the next approved box exactly as specified, verify it, an
 4. If the stage becomes BLOCKED (too many failed attempts), or you believe the specified approach itself
    can't pass the checks, stop and report facts only: which checks fail, the error output, the data you
    observed, and what you changed in each attempt. Don't propose a fix to the approach. The researcher
-   will add or revise a box on the board.
+   will add or revise a box in the flow.
 5. When verified, the stage is locked. Report the check results and stop.

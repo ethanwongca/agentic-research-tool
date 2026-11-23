@@ -7,6 +7,18 @@ import textwrap
 from .spec import Project
 
 
+def _schema(port: dict) -> str:
+    sc = port.get("schema") or {}
+    if not sc:
+        return ""
+    parts = []
+    for c in sc.get("columns") or []:
+        flags = [c.get("dtype", "any")] + (["not null"] if c.get("nullable") is False else []) + (["unique"] if c.get("unique") else [])
+        parts.append(f"{c.get('name')}({', '.join(flags)})")
+    parts += [f"{k}={v}" for k, v in sc.items() if k != "columns"]
+    return "[" + "; ".join(parts) + "]"
+
+
 def _bullets(items, indent="    ") -> str:
     return "\n".join(f"{indent}- {x}" for x in items) or f"{indent}(none)"
 
@@ -34,9 +46,8 @@ Decisions (available as params[key]):
 Constraints:
 {_bullets(s.get("constraints") or [])}
 
-Contract:
-    inputs:  {", ".join(f"{i['name']} <- {i.get('from', '?')} ({i.get('type', '?')})" for i in ins) or "(none)"}
-    outputs: {", ".join(f"{o['name']}: {o.get('type', '?')}" for o in outs)}
+Contract (enforced on every run by arx; symbols like n must agree across ports):
+{_bullets([f"in  {i['name']} <- {i.get('from', '?')}: {i.get('type', '?')} {_schema(i)}" for i in ins] + [f"out {o['name']}: {o.get('type', '?')} {_schema(o)}" for o in outs])}
 
 Verify with: arx verify {sid}
 """'''

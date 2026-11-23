@@ -108,7 +108,7 @@ def cmd_next(a):
             print(f"\nResearcher: review the diff of {', '.join(p.stage_files(sid))}; restore it or `arx unlock {sid}`.")
         return 0
     if not p.stages:
-        print("No boxes yet. The researcher adds them on the board: arx ui")
+        print("No boxes yet. The researcher adds them in the flow: arx ui")
         return 0
     print("All stages verified. 🎉")
     return 0
@@ -322,7 +322,7 @@ def cmd_init(a):
                          "  arx init ~/my-research --example     (or: cd examples/text-clustering && arx ui)")
     init_project(target, example=a.example)
     print(f"arx is set up in {target}")
-    print(f"  cd {target} && arx ui      # open the board")
+    print(f"  cd {target} && arx ui      # open the flow")
     return 0
 
 
@@ -438,6 +438,6 @@ def main(argv=None) -> int:
         cmd_status(argparse.Namespace(json=False, verbose=False))
         print()
         cmd_next(a)
-        print("\nOpen the board: arx ui")
+        print("\nOpen the flow: arx ui")
         return 0
     return a.fn(a) or 0
