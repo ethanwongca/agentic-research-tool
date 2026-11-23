@@ -1,0 +1,306 @@
+"""Local web UI: boxes-and-arrows view + spec forms + gate actions. Binds to 127.0.0.1 only."""
+from __future__ import annotations
+
+import copy
+import json
+import mimetypes
+import re
+import threading
+import webbrowser
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+from .banks import BANKS
+from .spec import Project, parse_scalar
+from .state import State
+
+UI = Path(__file__).parent / "ui" / "index.html"
+LOCK = threading.Lock()
+IMG = {".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".html", ".txt", ".csv", ".json", ".md"}
+
+
+def snapshot(root: Path) -> dict:
+    p = Project(root)
+    s = State(p)
+    stages = []
+    try:
+        order = p.topo_order()
+    except ValueError:
+        order = list(p.stages)
+    order += [sid for sid in p.all_stages if p.is_archived(sid)]
+    for sid in order:
+        st = s.status(sid)
+        art = p.root / "artifacts" / sid
+        stages.append({
+            "id": sid,
+            "spec": p.stage(sid),
+            "decisions": p.decisions(sid),
+            "deps": p.deps(sid),
+            "files": p.stage_files(sid),
+            "files_exist": [f for f in p.stage_files(sid) if (p.root / f).exists()],
+            "status": st["status"],
+            "reasons": st["reasons"],
+            "issues": p.issues(sid),
+            "result": s.result(sid),
+            "approved_at": (s.approvals.get(sid) or {}).get("at"),
+            "attempts": s.attempts.get(sid, 0),
+            "variants": [x for x, v in p.all_stages.items() if v.get("variant_of") == sid and not v.get("archived")],
+            "locked_at": (s.locks.get(sid) or {}).get("at"),
+            "artifacts": sorted(str(f.relative_to(p.root)) for f in art.rglob("*")
+                                if f.is_file() and f.suffix.lower() in IMG) if art.exists() else [],
+        })
+    meta = {k: v for k, v in p.data.items() if k != "stages"}
+    return {"pipeline": meta, "policy": p.policy, "kinds": {k: v for k, v in BANKS.items()}, "stages": stages}
+
+
+def clean_stage(body: dict) -> dict:
+    """Normalize a stage posted from the UI before writing pipeline.yaml."""
+    s = {k: v for k, v in body.items() if v not in (None, "", [], {}) or k in
+         ("purpose", "approach", "inputs", "outputs", "decisions", "constraints", "tests", "invariants")}
+    for d in s.get("decisions") or []:
+        if isinstance(d.get("answer"), str):
+            d["answer"] = parse_scalar(d["answer"]) if d["answer"].strip() else None
+            if d["answer"] is not None and not d.get("answered_by"):
+                d["answered_by"] = "researcher"
+        for k in [k for k, v in d.items() if v in ("", None, []) and k not in ("answer", "question")]:
+            d.pop(k)
+    for t in s.get("tests") or []:
+        for f in ("input", "params"):
+            if isinstance(t.get(f), str):
+                v = parse_scalar(t[f]) if t[f].strip() else {}
+                if isinstance(v, str):
+                    import yaml
+                    v = yaml.safe_load(v)
+                t[f] = v or {}
+        if not t.get("params"):
+            t.pop("params", None)
+        if not t.get("raises"):
+            t.pop("raises", None)
+    s["constraints"] = [c for c in s.get("constraints") or [] if str(c).strip()]
+    if isinstance(s.get("depends_on"), list):
+        s["depends_on"] = [d for d in s["depends_on"] if d]
+        if not s["depends_on"]:
+            s.pop("depends_on")
+    return s
+
+
+class Handler(BaseHTTPRequestHandler):
+    root: Path
+
+    def log_message(self, *a):  # quiet
+        pass
+
+    def _json(self, obj, code=200):
+        data = json.dumps(obj, default=str).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _body(self) -> dict:
+        n = int(self.headers.get("Content-Length") or 0)
+        return json.loads(self.rfile.read(n) or b"{}")
+
+    def _same_origin(self) -> bool:
+        origin = self.headers.get("Origin")
+        host = self.headers.get("Host", "")
+        return origin is None or urlparse(origin).netloc == host
+
+    def do_GET(self):
+        path = urlparse(self.path).path
+        if path in ("/", "/index.html"):
+            data = UI.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(data)
+        elif path == "/api/state":
+            try:
+                self._json(snapshot(self.root))
+            except Exception as e:  # noqa
+                self._json({"error": f"{type(e).__name__}: {e}"}, 500)
+        elif path.startswith("/files/"):
+            rel = unquote(path[len("/files/"):])
+            f = (self.root / rel).resolve()
+            if not str(f).startswith(str((self.root / "artifacts").resolve())) or not f.is_file():
+                return self._json({"error": "not found"}, 404)
+            self.send_response(200)
+            self.send_header("Content-Type", mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+            self.end_headers()
+            self.wfile.write(f.read_bytes())
+        else:
+            self._json({"error": "not found"}, 404)
+
+    def do_POST(self):
+        if not self._same_origin():
+            return self._json({"error": "cross-origin request refused"}, 403)
+        parts = urlparse(self.path).path.strip("/").split("/")
+        try:
+            with LOCK:
+                out = self.route(parts, self._body())
+            self._json(out or {"ok": True})
+        except SystemExit as e:
+            self._json({"error": str(e)}, 400)
+        except Exception as e:  # noqa
+            self._json({"error": f"{type(e).__name__}: {e}"}, 400)
+
+    def route(self, parts, body):
+        p = Project(self.root)
+        s = State(p)
+        if parts[:2] == ["api", "pipeline"]:
+            for k in ("name", "description"):
+                if k in body:
+                    p.data[k] = body[k]
+            if "policy" in body:
+                p.data["policy"] = {**(p.data.get("policy") or {}), **body["policy"]}
+            p.save()
+            return None
+        if parts[:2] == ["api", "stages"]:
+            sid = new_stage(p, body.get("title") or "New box", body.get("kind") or "custom")
+            p.save()
+            return {"id": sid}
+        if len(parts) != 3 or parts[0] != "api":
+            raise ValueError(f"unknown endpoint /{'/'.join(parts)}")
+        action, sid = parts[1], parts[2]
+        stage = p.stage(sid)
+
+        if action == "stage":
+            if sid in s.locks and body.get("_confirm_locked") is not True:
+                raise ValueError("stage is verified/locked; changing its spec marks it STALE")
+            body.pop("_confirm_locked", None)
+            body["id"] = sid
+            for k in ("archived", "variant_of"):
+                if stage.get(k) and k not in body:
+                    body[k] = stage[k]
+            p.stage_list[index_of(p, sid)] = clean_stage(body)
+            p.save()
+            return None
+        if action == "approve":
+            issues = p.issues(sid)
+            if issues:
+                raise ValueError("cannot approve, still unspecified:\n- " + "\n- ".join(issues))
+            for d in stage.get("decisions") or []:
+                if str(d.get("answered_by", "")).startswith("agent") and "confirmed" not in d["answered_by"]:
+                    d["answered_by"] = "agent (relayed, confirmed by researcher)"
+            p.save()
+            s.approve(sid)
+            return None
+        if action == "unlock":
+            s.unlock(sid)
+            return None
+        if action == "retry":
+            s.reset_attempts(sid)
+            return None
+        if action == "verify":
+            from .runner import StageError, verify
+            try:
+                return verify(p, s, sid)
+            except StageError as e:
+                raise ValueError(str(e))
+        if action == "archive":
+            stage["archived"] = True
+            p.save()
+            return None
+        if action == "restore":
+            stage.pop("archived", None)
+            p.save()
+            return None
+        if action == "delete":
+            if sid in s.locks:
+                raise ValueError("unlock the stage before deleting it")
+            readers = [x for x in p.stages if x != sid and sid in p.deps(x)]
+            if readers:
+                raise ValueError(f"other boxes read from '{sid}': {', '.join(readers)}")
+            p.data["stages"] = [x for x in p.stage_list if x["id"] != sid]
+            p.save()
+            s.approvals.pop(sid, None)
+            s.save()
+            return None
+        if action == "insert_before":
+            # new box N sits between this box and its upstream: upstream -> N -> this
+            nid = new_stage(p, body.get("title") or f"Before {stage.get('title', sid)}", body.get("kind") or "custom",
+                            at=index_of(p, sid))
+            n = p.stage(nid)
+            ins = stage.get("inputs") or []
+            n["inputs"] = copy.deepcopy(ins)
+            n["outputs"] = [{"name": i["name"], "type": i.get("type", ""), "description": f"prepared for {sid}"}
+                            for i in ins if i.get("name")]
+            n["depends_on"] = [d for d in stage.get("depends_on") or []]
+            if ins:
+                stage["inputs"] = [{**i, "from": f"{nid}.{i['name']}"} for i in ins]
+            stage["depends_on"] = [nid]
+            p.save()
+            return {"id": nid}
+        if action == "insert_after":
+            nid = new_stage(p, body.get("title") or f"After {stage.get('title', sid)}", body.get("kind") or "custom",
+                            at=index_of(p, sid) + 1)
+            n = p.stage(nid)
+            n["inputs"] = [{"name": o["name"], "from": f"{sid}.{o['name']}", "type": o.get("type", "")}
+                           for o in stage.get("outputs") or [] if o.get("name")]
+            if not n["inputs"]:
+                n["depends_on"] = [sid]
+            p.save()
+            return {"id": nid}
+        if action == "variant":
+            # an alternative approach for the same box: same contract and checks, approach left for you
+            nid = unique_id(p, f"{sid}_alt")
+            v = copy.deepcopy({k: val for k, val in stage.items() if k not in ("files", "archived", "ui")})
+            v.update({"id": nid, "title": f"{stage.get('title', sid)} (alternative)", "variant_of": sid,
+                      "approach": ""})
+            p.stage_list.insert(index_of(p, sid) + 1, v)
+            p.save()
+            return {"id": nid}
+        if action == "promote":
+            orig = stage.get("variant_of")
+            if not orig:
+                raise ValueError(f"'{sid}' is not an alternative of another box")
+            for x in p.stage_list:
+                if x["id"] in (sid, orig):
+                    continue
+                for i in x.get("inputs") or []:
+                    if str(i.get("from", "")).startswith(orig + "."):
+                        i["from"] = sid + i["from"][len(orig):]
+                if x.get("depends_on"):
+                    x["depends_on"] = [sid if d == orig else d for d in x["depends_on"]]
+            p.stage(orig)["archived"] = True
+            stage.pop("variant_of", None)
+            p.save()
+            return None
+        raise ValueError(f"unknown action '{action}'")
+
+
+def index_of(p: Project, sid: str) -> int:
+    return [x["id"] for x in p.stage_list].index(sid)
+
+
+def unique_id(p: Project, base: str) -> str:
+    base = re.sub(r"\W+", "_", base.lower()).strip("_") or "box"
+    if base[0].isdigit():
+        base = "s_" + base
+    sid, n = base, 2
+    while sid in p.all_stages:
+        sid, n = f"{base}{n}", n + 1
+    return sid
+
+
+def new_stage(p: Project, title: str, kind: str = "custom", at: int | None = None) -> str:
+    sid = unique_id(p, title)
+    st = {"id": sid, "title": title, "kind": kind, "purpose": "", "approach": "", "inputs": [], "outputs": [],
+          "decisions": [], "constraints": [], "tests": [], "invariants": []}
+    p.stage_list.insert(len(p.stage_list) if at is None else at, st)
+    return sid
+
+
+def serve(root: Path, port: int = 8765, open_browser: bool = True) -> None:
+    Handler.root = Path(root)
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    url = f"http://127.0.0.1:{port}/"
+    print(f"arx ui: {url}  (Ctrl-C to stop)")
+    if open_browser:
+        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass

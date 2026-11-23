@@ -1,0 +1,125 @@
+name: text-clustering
+description: "Cluster short documents by topic: clean -> embed -> cluster."
+policy:
+  stage_dir: stages
+  min_constraints: 1
+  min_tests: 1
+  min_invariants: 1
+stages:
+  - id: preprocess
+    title: Data processing
+    kind: data_processing
+    purpose: Turn the raw CSV into a clean, deduplicated list of document texts with stable ids.
+    approach: |
+      Read the CSV with the stdlib csv module. Keep `id` and `text`. Normalize text with unicode NFKC,
+      lowercase, collapse all whitespace runs to a single space, strip. Drop rows whose cleaned text is
+      empty or shorter than params.min_chars. Deduplicate on the cleaned text, keeping the first occurrence.
+      Preserve input order.
+    inputs: []
+    outputs:
+      - name: ids
+        type: list[str]
+        description: document ids, aligned with texts
+      - name: texts
+        type: list[str]
+        description: cleaned texts
+    decisions:
+      - key: source
+        question: Where does the raw data come from (path/URL) and in what format?
+        answer: data/docs.csv (UTF-8 CSV with columns id,text)
+      - key: path
+        question: Path to the CSV, relative to the project root?
+        answer: data/docs.csv
+      - key: record_unit
+        question: What is one record (row, document, sentence, ...)?
+        answer: one CSV row = one document
+      - key: fields
+        question: Which fields are kept, and which one is the primary content?
+        answer: id and text; text is the content
+      - key: cleaning
+        question: Exactly which cleaning/normalization steps (lowercase, strip HTML, unicode NFKC, ...)?
+        answer: NFKC, lowercase, collapse whitespace, strip. No stemming, no stopword removal.
+      - key: dedup
+        question: How are duplicates defined, and what happens to them?
+        answer: exact match on cleaned text; keep first occurrence
+      - key: missing
+        question: How are missing / empty / malformed records handled (drop, impute, fail loudly)?
+        answer: drop empty/too-short texts; a row missing the text column entirely should raise ValueError
+      - key: filtering
+        question: Inclusion / exclusion criteria (length limits, language, date range, ...)?
+        answer: keep texts with at least min_chars characters after cleaning
+      - key: min_chars
+        question: Minimum cleaned text length?
+        answer: 3
+      - key: sample
+        question: Full dataset or a sample? If a sample, size and seed.
+        answer: full dataset
+    constraints:
+      - ids and texts have equal length and stay aligned
+      - no duplicate texts in the output
+      - input order is preserved
+      - no network access
+    tests:
+      - name: cleans and dedups
+        input: {}
+        params: {path: tests/fixtures/tiny.csv}
+        expect: "out['texts'] == ['hello world', 'cats are great'] and out['ids'] == ['1', '3']"
+    invariants:
+      - name: aligned
+        expr: len(out['ids']) == len(out['texts'])
+      - name: no duplicates
+        expr: len(set(out['texts'])) == len(out['texts'])
+      - name: no short texts
+        expr: all(len(t) >= params['min_chars'] for t in out['texts'])
+      - name: kept most of the data
+        expr: len(out['texts']) >= 20
+
+  - id: embed
+    title: Embedding
+    kind: embedding
+    purpose: Map each cleaned text to a fixed-size vector.
+    approach: TBD
+    inputs:
+      - name: texts
+        from: preprocess.texts
+        type: list[str]
+    outputs:
+      - name: embeddings
+        type: ndarray
+        description: float32 array of shape (n_docs, dim), row i = texts[i]
+    decisions:
+      - key: model
+        question: Which embedding model, exact name and version?
+        answer: null
+    constraints:
+      - row order matches input texts
+      - deterministic for the same input
+    tests:
+      - name: one row per text
+        input: {texts: ["a cat", "a dog", "stock markets fell"]}
+        expect: out['embeddings'].shape[0] == 3
+    invariants:
+      - name: shape matches
+        expr: out['embeddings'].shape[0] == len(inp['texts'])
+      - name: finite
+        expr: bool(np.isfinite(out['embeddings']).all())
+
+  - id: cluster
+    title: Clustering
+    kind: clustering
+    purpose: Group documents into topics.
+    approach: ""
+    inputs:
+      - name: embeddings
+        from: embed.embeddings
+        type: ndarray
+    outputs:
+      - name: labels
+        type: ndarray
+        description: int cluster id per document, -1 = noise
+    decisions: []
+    constraints: []
+    tests: []
+    invariants:
+      - name: one label per document
+        expr: len(out['labels']) == len(inp['embeddings'])
