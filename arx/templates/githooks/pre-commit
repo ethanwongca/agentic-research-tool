@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# arx: refuse commits where verified (locked) stage code was modified without unlocking.
+ROOT="$(git rev-parse --show-toplevel)"
+exec "$ROOT/arx" check --ci > /dev/null

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arx"
+version = "0.1.0"
+description = "Spec-gated research pipelines: researcher decides, agent implements, checks lock it in."
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6"]
+
+[project.scripts]
+arx = "arx.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["arx*"]
+
+[tool.setuptools.package-data]
+arx = ["ui/*", "templates/**/*", "templates/*"]
