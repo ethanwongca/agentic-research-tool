@@ -18,6 +18,15 @@ from .spec import Project, parse_scalar
 from .state import State
 
 UI = Path(__file__).parent / "ui" / "index.html"
+
+
+def code_sig() -> str:
+    """Fingerprint of arx's Python code, so the page can tell when this server is out of date."""
+    files = sorted(Path(__file__).parent.glob("*.py"))
+    return str(sum(int(f.stat().st_mtime) for f in files))
+
+
+BOOT_SIG = code_sig()
 LOCK = threading.Lock()
 IMG = {".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".html", ".txt", ".csv", ".json", ".md"}
 
@@ -54,8 +63,13 @@ def snapshot(root: Path) -> dict:
         })
     meta = {k: v for k, v in p.data.items() if k != "stages"}
     from .contracts import DTYPES, PORT_TYPES
+    from .agent import RUNNER
+    meta.pop("notes", None)
     return {"pipeline": meta, "policy": p.policy, "kinds": {k: v for k, v in BANKS.items()}, "stages": stages,
-            "port_types": PORT_TYPES, "dtypes": DTYPES}
+            "port_types": PORT_TYPES, "dtypes": DTYPES, "notes": p.data.get("notes") or [],
+            "stale_server": code_sig() != BOOT_SIG,
+            "agents": {a: bool(__import__("shutil").which(a)) for a in ("claude", "codex")},
+            "agent": {k: v for k, v in RUNNER.status().items() if k != "events"}}
 
 
 def clean_stage(body: dict) -> dict:
@@ -94,11 +108,12 @@ def clean_stage(body: dict) -> dict:
     for t in s.get("tests") or []:
         for f in ("input", "params"):
             if isinstance(t.get(f), str):
-                v = parse_scalar(t[f]) if t[f].strip() else {}
-                if isinstance(v, str):
-                    import yaml
-                    v = yaml.safe_load(v)
-                t[f] = v or {}
+                raw = t[f]
+                try:
+                    v = yaml.safe_load(raw) if raw.strip() else {}
+                except yaml.YAMLError:
+                    v = raw  # half-typed: keep the text, `arx check` flags it
+                t[f] = v if v not in (None, "") else {}
         if not t.get("params"):
             t.pop("params", None)
         if not t.get("raises"):
@@ -147,6 +162,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(snapshot(self.root))
             except Exception as e:  # noqa
                 self._json({"error": f"{type(e).__name__}: {e}"}, 500)
+        elif path == "/api/agent":
+            from .agent import RUNNER
+            self._json(RUNNER.status())
+        elif path == "/favicon.svg":
+            data = (UI.parent / "favicon.svg").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.end_headers()
+            self.wfile.write(data)
         elif path.startswith("/files/"):
             rel = unquote(path[len("/files/"):])
             f = (self.root / rel).resolve()
@@ -216,6 +240,21 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("that arrow would create a cycle")
             p.save()
             return {"name": name}
+        if parts[:2] == ["api", "depend"]:
+            src, to = str(body.get("from", "")), str(body.get("to", ""))
+            if src == to:
+                raise ValueError("a box can't depend on itself")
+            p.stage(src)
+            tgt = p.stage(to)
+            deps = tgt.setdefault("depends_on", [])
+            if src not in deps:
+                deps.append(src)
+            try:
+                p.topo_order()
+            except ValueError:
+                raise ValueError("that arrow would create a cycle")
+            p.save()
+            return None
         if parts[:2] == ["api", "disconnect"]:
             tgt = p.stage(str(body.get("to")))
             if body.get("input"):
@@ -225,6 +264,34 @@ class Handler(BaseHTTPRequestHandler):
                 if not tgt["depends_on"]:
                     tgt.pop("depends_on")
             p.save()
+            return None
+        if parts[:2] == ["api", "note"]:
+            notes = p.data.setdefault("notes", [])
+            nid = body.get("id")
+            n = next((x for x in notes if x.get("id") == nid), None)
+            if n is None:
+                nid = f"n{int(__import__('time').time() * 1000) % 10**9}"
+                n = {"id": nid, "text": "", "x": 0, "y": 0, "color": "yellow"}
+                notes.append(n)
+            for k in ("text", "color", "links"):
+                if k in body:
+                    n[k] = body[k]
+            for k in ("x", "y", "w"):
+                if k in body:
+                    n[k] = round(float(body[k]))
+            p.save()
+            return {"id": nid}
+        if parts[:2] == ["api", "note_delete"]:
+            nid = body.get("id")
+            p.data["notes"] = [x for x in p.data.get("notes") or [] if x.get("id") != nid]
+            for x in p.data["notes"]:
+                if nid in (x.get("links") or []):
+                    x["links"] = [l for l in x["links"] if l != nid]
+            p.save()
+            return None
+        if parts[:2] == ["api", "agent_stop"]:
+            from .agent import RUNNER
+            RUNNER.stop()
             return None
         if len(parts) != 3 or parts[0] != "api":
             raise ValueError(f"unknown endpoint /{'/'.join(parts)}")
@@ -241,6 +308,16 @@ class Handler(BaseHTTPRequestHandler):
                     body[k] = stage[k]
             p.stage_list[index_of(p, sid)] = clean_stage(body)
             p.save()
+            return None
+        if action == "agent":
+            from .agent import RUNNER
+            st = s.status(sid)["status"]
+            if st not in ("approved", "failing"):
+                raise ValueError(f"'{sid}' is {st}; the agent can only build approved or failing boxes")
+            bad = [d for d in p.deps(sid) if s.status(d)["status"] != "verified"]
+            if bad:
+                raise ValueError(f"build the upstream box first: {', '.join(bad)}")
+            RUNNER.start(p.root, sid, p.stage_files(sid)[0], body.get("agent") or p.policy.get("agent", "claude"))
             return None
         if action == "move":
             stage["ui"] = {"x": round(float(body.get("x", 0))), "y": round(float(body.get("y", 0)))}

@@ -3,781 +3,938 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>arx · research flow</title>
+<title>arx</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a3235'/%3E%3Crect x='10' y='20' width='18' height='24' rx='5' fill='%23fffaf2'/%3E%3Crect x='36' y='20' width='18' height='24' rx='5' fill='%23f0529c'/%3E%3Cpath d='M28 32h8' stroke='%230fcb8c' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --canvas: #f7f2ea; --dots: #ddd3c4; --panel: #ffffff; --soft: #f4eee5; --soft2: #ece4d8;
-    --ink: #0a3235; --ink2: #24494c; --muted: #6a7f80; --line: #e6ddcf;
-    --pink: #f0529c; --teal: #105257; --mint: #0fcb8c; --warn: #e07a1f; --danger: #d64545;
-    --s-draft: #93a3a4; --s-ready: #2d7fd3; --s-approved: #7a5be0; --s-failing: #e0484f; --s-blocked: #c0306f;
-    --s-verified: #0faa79; --s-stale: #e39b17; --s-tampered: #a3243f; --s-archived: #b8b1a5;
+    color-scheme: light;
+    --canvas: #f6f3ee; --dots: #d8d1c5; --panel: #ffffff; --soft: #f4f0e9; --soft2: #ebe5db; --line: #e8e2d8;
+    --ink: #0a3235; --ink2: #2b4f52; --muted: #6b7f80; --faint: #9aa9a9;
+    --pink: #f0529c; --mint: #0fcb8c; --teal: #105257; --warn: #dd7a1d; --danger: #d64545;
+    --s-draft: #9aa9a9; --s-ready: #2f7fd6; --s-approved: #7a5be0; --s-failing: #e0484f; --s-blocked: #c0306f;
+    --s-verified: #0ea877; --s-stale: #e29a14; --s-tampered: #a3243f; --s-archived: #b8b1a5;
     --sans: Manrope, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --shadow: 0 1px 2px rgba(10,50,53,.06), 0 6px 20px rgba(10,50,53,.07);
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --canvas: #0b2023; --dots: #1d3a3d; --panel: #102b2e; --soft: #15363a; --soft2: #1b4044;
-      --ink: #f3ede4; --ink2: #d5d0c7; --muted: #8fa5a6; --line: #22474b; --teal: #4fd1bd; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); }
+    --sh1: 0 1px 2px rgba(10,50,53,.07), 0 4px 14px rgba(10,50,53,.07);
+    --sh2: 0 2px 6px rgba(10,50,53,.08), 0 14px 36px rgba(10,50,53,.12);
   }
   * { box-sizing: border-box; font-variant-ligatures: none; }
   html, body { height: 100%; margin: 0; }
-  body { font: 14px/1.5 var(--sans); color: var(--ink); background: var(--canvas); overflow: hidden; display: grid; grid-template-rows: 60px 1fr; grid-template-columns: 1fr 500px; }
-  @media (max-width: 1100px) { body { grid-template-columns: 1fr 420px; } }
-
-  /* top bar */
-  .top { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 18px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 4; }
-  .mark { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: -.02em; font-size: 17px; }
-  .mark i { width: 22px; height: 22px; border-radius: 7px; background: conic-gradient(from 210deg, var(--pink), var(--teal), var(--mint), var(--pink)); display: inline-block; }
-  .pname { font-weight: 700; font-size: 15px; }
-  .pdesc { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40ch; }
-  .counts { display: flex; gap: 6px; flex: 1; justify-content: flex-end; flex-wrap: wrap; }
-  .count { font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border-radius: 99px; padding: 2px 9px; }
-
-  button { font: 600 13px var(--sans); color: var(--ink); background: var(--panel); border: 1.5px solid var(--line); border-radius: 99px; padding: 6px 14px; cursor: pointer; transition: border-color .12s, background .12s; }
+  body { font: 14px/1.5 var(--sans); color: var(--ink); background: var(--canvas); overflow: hidden; }
+  button { font: 600 13px var(--sans); color: var(--ink); background: var(--panel); border: 1.5px solid var(--line); border-radius: 99px; padding: 7px 14px; cursor: pointer; }
   button:hover:not(:disabled) { border-color: var(--ink); }
   button:disabled { opacity: .4; cursor: not-allowed; }
-  button.dark { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
   button.pink { background: var(--pink); color: #fff; border-color: var(--pink); }
-  button.mint { background: var(--mint); color: #05302a; border-color: var(--mint); }
-  button.ghost { border-color: transparent; background: transparent; }
-  button.ghost:hover { background: var(--soft); border-color: transparent; }
-  button.sm { padding: 3px 10px; font-size: 12px; }
+  button.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+  button.quiet:hover { background: var(--soft); color: var(--ink); }
+  button.sm { padding: 4px 11px; font-size: 12px; }
   button.danger { color: var(--danger); }
+  svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
 
-  /* canvas */
-  .stage { position: relative; overflow: hidden; background-color: var(--canvas); background-image: radial-gradient(var(--dots) 1.2px, transparent 1.2px); background-size: 22px 22px; cursor: grab; }
-  .stage.panning { cursor: grabbing; }
+  /* ---------- top bar ---------- */
+  .top { position: fixed; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 16px; z-index: 20; pointer-events: none; }
+  .top > * { pointer-events: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; background: var(--panel); border-radius: 14px; padding: 6px 12px 6px 8px; box-shadow: var(--sh1); }
+  .brand img { width: 26px; height: 26px; }
+  .brand input { border: none; background: none; font: 700 15px var(--sans); color: var(--ink); width: 220px; padding: 4px 6px; border-radius: 8px; }
+  .brand input:hover { background: var(--soft); } .brand input:focus { outline: none; background: var(--soft); }
+  .summary { background: var(--panel); border-radius: 14px; padding: 9px 14px; box-shadow: var(--sh1); font-size: 13px; color: var(--muted); display: flex; gap: 12px; }
+  .summary b { color: var(--ink); }
+  .summary .d { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 5px; }
+  .spacer { flex: 1; }
+  .agentpill { background: var(--ink); color: #fff; border-radius: 99px; padding: 8px 14px; font-weight: 700; font-size: 13px; display: none; align-items: center; gap: 8px; box-shadow: var(--sh1); cursor: pointer; }
+  .agentpill.on { display: flex; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); animation: pulse 1.2s infinite; display: inline-block; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .iconbtn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; padding: 0; background: var(--panel); border: none; box-shadow: var(--sh1); color: var(--ink2); }
+  .iconbtn:hover { color: var(--ink); background: var(--soft); }
+
+  /* ---------- canvas ---------- */
+  .stage { position: fixed; inset: 0; background-color: var(--canvas); background-image: radial-gradient(var(--dots) 1.1px, transparent 1.1px); background-size: 24px 24px; }
+  .stage.t-select { cursor: default; } .stage.t-hand { cursor: grab; } .stage.panning { cursor: grabbing; }
+  .stage.t-box, .stage.t-note, .stage.t-arrow { cursor: crosshair; }
   .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg.edges { position: absolute; left: 0; top: 0; overflow: visible; width: 1px; height: 1px; }
-  .edge { fill: none; stroke: var(--ink2); stroke-width: 2; opacity: .55; }
-  .edge.dep { stroke-dasharray: 5 5; }
-  .edge.temp { stroke: var(--pink); opacity: 1; stroke-dasharray: 6 4; }
-  .edge-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
-  .edge-hit:hover + .edge, .edge.hl { stroke: var(--pink); opacity: 1; }
-  .elabel { font: 500 10.5px var(--mono); fill: var(--muted); }
+  .edge { fill: none; stroke: #7d9293; stroke-width: 2.2; }
+  .edge.dep { stroke-dasharray: 6 6; }
+  .edge.link { stroke: #b9b1a3; stroke-width: 1.6; stroke-dasharray: 2 5; }
+  .edge.temp { stroke: var(--pink); stroke-dasharray: 7 5; }
+  .edge.sel { stroke: var(--pink); stroke-width: 3; }
+  .ehit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; pointer-events: stroke; }
+  .ehit:hover + .edge { stroke: var(--pink); }
 
-  .node { position: absolute; width: 260px; background: var(--panel); border-radius: 16px; box-shadow: var(--shadow); border: 1.5px solid var(--line); user-select: none; }
-  .node.sel { border-color: var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--pink) 25%, transparent), var(--shadow); }
-  .node.alt { border-style: dashed; }
-  .node.drop { border-color: var(--pink); box-shadow: 0 0 0 5px color-mix(in srgb, var(--pink) 30%, transparent); }
-  .nhead { height: 66px; padding: 12px 14px 0 16px; cursor: move; position: relative; border-radius: 16px 16px 0 0; }
-  .nhead::before { content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 4px; border-radius: 0 0 4px 4px; background: var(--c); }
-  .ntitle { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 22px; }
-  .nsub { display: flex; gap: 6px; align-items: center; margin-top: 5px; }
-  .kchip { font: 500 10.5px var(--mono); color: var(--muted); background: var(--soft); border-radius: 6px; padding: 1px 6px; }
-  .spill { font-size: 11px; font-weight: 700; color: var(--c); display: inline-flex; align-items: center; gap: 5px; }
-  .spill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
-  .nlock { position: absolute; right: 12px; top: 12px; font-size: 13px; }
-  .nports { padding: 6px 0; border-top: 1px solid var(--line); }
-  .port { height: 28px; display: flex; align-items: center; gap: 7px; padding: 0 14px; font-size: 12.5px; position: relative; }
+  .box { position: absolute; width: 244px; background: var(--panel); border-radius: 18px; box-shadow: var(--sh1); border: 2px solid transparent; user-select: none; cursor: grab; transition: box-shadow .12s; }
+  .box:hover { box-shadow: var(--sh2); }
+  .box.sel { border-color: var(--ink); box-shadow: var(--sh2); }
+  .box.alt { border-style: dashed; border-color: var(--faint); }
+  .box.alt.sel { border-color: var(--ink); }
+  .box.drop, .note.drop { border-color: var(--pink) !important; box-shadow: 0 0 0 6px rgba(240,82,156,.2), var(--sh2); }
+  .bh { height: 62px; padding: 13px 16px 0; position: relative; }
+  .bh::before { content: ""; position: absolute; left: 16px; top: 0; width: 44px; height: 5px; border-radius: 0 0 5px 5px; background: var(--c); }
+  .bt { font-weight: 800; font-size: 15px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 18px; }
+  .bs { display: flex; gap: 6px; align-items: center; margin-top: 3px; font-size: 12px; }
+  .st { font-weight: 700; color: var(--c); display: inline-flex; align-items: center; gap: 5px; }
+  .st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+  .kd { color: var(--faint); font-family: var(--mono); font-size: 11px; }
+  .lock { position: absolute; right: 14px; top: 13px; font-size: 13px; }
+  .ports { padding: 6px 0; }
+  .port { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 16px; font-size: 12.5px; position: relative; }
   .port.out { justify-content: flex-end; }
-  .port .pn { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-  .port .pt { font: 500 10.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
-  .port .dot { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--panel); border: 2.5px solid var(--ink2); top: 7.5px; }
-  .port.in .dot { left: -7.5px; }
-  .port.out .dot { right: -7.5px; cursor: crosshair; border-color: var(--teal); }
-  .port.out .dot:hover { background: var(--pink); border-color: var(--pink); transform: scale(1.25); }
-  .port.none { color: var(--muted); font-style: italic; font-size: 12px; }
-  .nfoot { height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
-  .nfoot b { color: var(--c); font-weight: 700; }
-  .nfoot .bar { flex: 1; height: 4px; border-radius: 4px; background: var(--soft2); overflow: hidden; }
-  .nfoot .bar i { display: block; height: 100%; background: var(--c); }
+  .port b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .port i { font: normal 500 11px var(--mono); color: var(--faint); white-space: nowrap; }
+  .port.none { color: var(--faint); font-size: 12px; }
+  .port.addout { color: var(--pink); font-weight: 700; font-size: 12px; cursor: pointer; }
+  .port.addout:hover { text-decoration: underline; }
+  .sock { position: absolute; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--t); }
+  .port.in .sock { left: -8px; }
+  .port.out .sock { right: -8px; cursor: crosshair; }
+  .port.out .sock::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; }
+  .port.out .sock:hover { background: var(--t); transform: scale(1.3); }
+  .legend { position: fixed; right: 16px; bottom: 16px; background: var(--panel); border-radius: 12px; box-shadow: var(--sh1); padding: 7px 12px; display: flex; gap: 12px; font: 500 11px var(--mono); color: var(--muted); z-index: 15; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 2.5px solid var(--t); margin-right: 5px; vertical-align: -1px; }
+  .qa { position: fixed; z-index: 45; width: 280px; background: var(--panel); border-radius: 16px; box-shadow: var(--sh2); padding: 8px; }
+  .qa input { background: var(--soft); margin-bottom: 6px; }
+  .qa .it { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13.5px; }
+  .qa .it small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
+  .qa .it.on, .qa .it:hover { background: var(--soft); }
+  .qa .ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; flex: none; font-size: 14px; }
+  .bf { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .bf .bar { flex: 1; height: 4px; border-radius: 4px; background: var(--soft2); overflow: hidden; }
+  .bf .bar i { display: block; height: 100%; background: var(--c); border-radius: 4px; }
+  .handle { position: absolute; right: -15px; top: 19px; width: 26px; height: 26px; border-radius: 50%; background: var(--pink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 17px; line-height: 1; cursor: crosshair; opacity: 0; transform: scale(.7); transition: .12s; box-shadow: 0 2px 8px rgba(240,82,156,.4); z-index: 2; }
+  .box:hover .handle, .note:hover .handle, .box.sel .handle, .note.sel .handle { opacity: 1; transform: scale(1); }
+  .handle:hover { transform: scale(1.15) !important; }
 
-  .hud { position: absolute; left: 16px; bottom: 16px; display: flex; gap: 8px; align-items: center; }
-  .hud .tip { background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; font-size: 12px; color: var(--muted); box-shadow: var(--shadow); }
-  .zoom { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; box-shadow: var(--shadow); }
-  .zoom button { border: none; padding: 5px 11px; background: none; }
-  .zoom span { font: 500 12px var(--mono); padding: 6px 4px; min-width: 44px; text-align: center; }
-  .empty-canvas { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
-  .empty-canvas div { text-align: center; color: var(--muted); pointer-events: auto; }
-  .empty-canvas h2 { color: var(--ink); margin: 0 0 6px; font-size: 22px; letter-spacing: -.02em; }
+  .note { position: absolute; width: 200px; min-height: 120px; padding: 16px 16px 18px; border-radius: 4px 4px 4px 18px; box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 8px 18px rgba(80,60,20,.12); border: 2px solid transparent; cursor: grab; user-select: none; font-size: 14px; line-height: 1.45; word-wrap: break-word; }
+  .note .tx { white-space: pre-wrap; }
+  ::placeholder { color: #a9b5b5; opacity: 1; }
+  .note.sel { border-color: var(--ink); }
+  .c-yellow { background: #ffe98f; } .c-pink { background: #ffcde2; } .c-mint { background: #c4f1dc; } .c-blue { background: #cfe1ff; } .c-sand { background: #efe4d1; }
+  .note .ph { color: rgba(10,50,53,.4); }
+  .note textarea { width: 100%; min-height: 90px; border: none; background: transparent; font: inherit; color: inherit; resize: none; padding: 0; outline: none; }
+  .notebar { position: absolute; display: flex; gap: 6px; align-items: center; background: var(--panel); border-radius: 99px; padding: 5px 8px; box-shadow: var(--sh2); z-index: 5; transform: translateY(calc(-100% - 10px)); }
+  .swatch { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; }
 
-  /* inspector */
-  .insp { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; z-index: 3; }
-  .ihead { padding: 18px 22px 12px; }
-  .ihead .row1 { display: flex; align-items: center; gap: 8px; }
-  .ihead h1 { margin: 6px 0 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
-  .ihead .sid { font: 500 12px var(--mono); color: var(--muted); }
-  .gate { margin: 0 22px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--c) 9%, var(--panel)); border: 1px solid color-mix(in srgb, var(--c) 30%, var(--line)); }
-  .gate .gt { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--c); }
-  .gate .gt::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
-  .gate p { margin: 4px 0 0; color: var(--ink2); font-size: 13px; }
-  .gate ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink2); max-height: 150px; overflow: auto; }
-  .gate .acts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  .nextopts { display: grid; gap: 6px; margin-top: 12px; }
-  .nextopts button { text-align: left; border-radius: 12px; padding: 9px 12px; font-weight: 700; }
-  .nextopts button span { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
-  .tabs { display: flex; gap: 2px; padding: 14px 22px 0; border-bottom: 1px solid var(--line); }
-  .tabs button { border: none; border-radius: 0; background: none; padding: 8px 12px 10px; color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1px; }
-  .tabs button.on { color: var(--ink); border-bottom-color: var(--pink); }
-  .tabs .badge { font-size: 10.5px; background: var(--warn); color: #fff; border-radius: 99px; padding: 0 6px; margin-left: 4px; }
-  .ibody { flex: 1; overflow-y: auto; padding: 16px 22px 100px; }
-  .savebar { display: none; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 22px; border-top: 1px solid var(--line); background: var(--panel); }
-  .savebar.show { display: flex; }
+  .tools { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); background: var(--panel); border-radius: 16px; box-shadow: var(--sh2); padding: 5px; display: flex; gap: 2px; z-index: 25; }
+  .tools button { width: 42px; height: 42px; border-radius: 11px; border: none; padding: 0; display: grid; place-items: center; color: var(--ink2); background: none; position: relative; }
+  .tools button:hover { background: var(--soft); }
+  .tools button.on { background: var(--ink); color: #fff; }
+  .tools hr { border: none; width: 1px; background: var(--line); margin: 6px 4px; }
+  .tools button[data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 50px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: #fff; font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 8px; pointer-events: none; }
+  .zoom { position: fixed; left: 16px; bottom: 16px; display: flex; align-items: center; background: var(--panel); border-radius: 12px; box-shadow: var(--sh1); z-index: 15; }
+  .zoom button { border: none; background: none; padding: 7px 11px; border-radius: 12px; }
+  .zoom span { font: 600 12px var(--mono); min-width: 46px; text-align: center; color: var(--muted); }
+  .empty { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2; }
+  .empty .card { pointer-events: auto; background: var(--panel); border-radius: 22px; box-shadow: var(--sh2); padding: 30px 34px; text-align: center; max-width: 420px; }
+  .empty h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.02em; }
+  .empty p { color: var(--muted); margin: 0 0 18px; }
+  .pop { position: fixed; z-index: 40; background: var(--panel); border-radius: 14px; box-shadow: var(--sh2); padding: 6px; display: flex; flex-direction: column; min-width: 210px; }
+  .pop .ph { font-size: 11px; color: var(--muted); padding: 6px 10px 4px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .pop button { border: none; border-radius: 9px; text-align: left; padding: 8px 10px; background: none; font-weight: 600; }
+  .pop button:hover:not(:disabled) { background: var(--soft); }
+  .pop button small { display: block; color: var(--muted); font-weight: 500; }
 
-  .sec { margin-bottom: 22px; }
-  .sec > h3 { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
-  .sec > h3 .h { text-transform: none; letter-spacing: 0; font-weight: 500; }
-  .sec.missing > h3 { color: var(--warn); }
-  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; }
-  input, textarea, select { width: 100%; font: 500 13.5px var(--sans); color: var(--ink); background: var(--soft); border: 1.5px solid transparent; border-radius: 10px; padding: 7px 10px; }
+  /* ---------- inspector ---------- */
+  .insp { position: fixed; right: 12px; top: 68px; bottom: 12px; width: 440px; background: var(--panel); border-radius: 20px; box-shadow: var(--sh2); z-index: 18; display: flex; flex-direction: column; transform: translateX(110%); transition: transform .2s ease; }
+  .insp.show { transform: none; }
+  .ih { padding: 14px 18px 0; }
+  .ih .r1 { display: flex; align-items: center; gap: 8px; }
+  .ih .saved { font-size: 12px; color: var(--faint); margin-right: 4px; }
+  .ih .title { width: 100%; border: none; font: 800 22px/1.25 var(--sans); letter-spacing: -.02em; color: var(--ink); padding: 6px 8px; margin: 4px -8px 0; border-radius: 10px; background: none; }
+  .ih .title:hover { background: var(--soft); } .ih .title:focus { outline: none; background: var(--soft); }
+  .ih select.kind { width: auto; font: 500 12px var(--mono); color: var(--muted); background: var(--soft); border: none; border-radius: 8px; padding: 4px 8px; }
+  .pillst { font-size: 12px; font-weight: 800; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); border-radius: 99px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 6px; }
+  .pillst::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+  .next { margin: 12px 18px 0; border-radius: 16px; background: color-mix(in srgb, var(--c) 8%, #fff); padding: 14px 16px; }
+  .next h4 { margin: 0; font-size: 14px; }
+  .next p { margin: 3px 0 0; color: var(--ink2); font-size: 13px; }
+  .next .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .todo { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 4px; max-height: 190px; overflow: auto; }
+  .todo li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; padding: 5px 8px; border-radius: 9px; background: rgba(255,255,255,.7); }
+  .todo li:hover { background: #fff; color: var(--pink); }
+  .todo li::before { content: ""; flex: none; width: 13px; height: 13px; border-radius: 4px; border: 1.8px solid var(--warn); margin-top: 3px; }
+  .opts { display: grid; gap: 6px; margin-top: 10px; }
+  .opts button { text-align: left; border-radius: 12px; padding: 8px 12px; background: rgba(255,255,255,.8); }
+  .opts button small { display: block; font-weight: 500; color: var(--muted); }
+  .log { margin-top: 10px; max-height: 210px; overflow: auto; background: #fff; border-radius: 12px; padding: 8px 10px; font-size: 12px; display: grid; gap: 4px; }
+  .log .ev { display: grid; grid-template-columns: 38px 1fr; gap: 6px; }
+  .log .ev span:first-child { color: var(--faint); font-family: var(--mono); font-size: 11px; }
+  .log .tool { font-family: var(--mono); font-size: 11.5px; color: var(--ink2); }
+  .log .blocked, .log .error { color: var(--danger); } .log .result { font-weight: 700; } .log .done { color: var(--s-verified); font-weight: 700; }
+  .tabs { display: flex; gap: 4px; padding: 14px 18px 0; }
+  .tabs button { border: none; background: none; border-radius: 99px; padding: 6px 12px; color: var(--muted); }
+  .tabs button.on { background: var(--ink); color: #fff; }
+  .tabs .n { display: inline-grid; place-items: center; min-width: 17px; height: 17px; font-size: 10.5px; border-radius: 99px; background: var(--warn); color: #fff; margin-left: 5px; padding: 0 4px; }
+  .ib { flex: 1; overflow-y: auto; padding: 12px 18px 40px; }
+  .locked { background: var(--soft); border-radius: 12px; padding: 9px 12px; font-size: 13px; color: var(--ink2); margin-bottom: 12px; }
+
+  .step { display: grid; grid-template-columns: 26px 1fr; gap: 10px; margin-bottom: 20px; }
+  .step .num { width: 24px; height: 24px; border-radius: 50%; background: var(--soft2); display: grid; place-items: center; font-weight: 800; font-size: 12px; color: var(--ink2); margin-top: 2px; }
+  .step.miss .num { background: var(--warn); color: #fff; }
+  .step.ok .num { background: var(--mint); color: #fff; }
+  .step h3 { margin: 2px 0 2px; font-size: 14.5px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  code { font: 500 11.5px var(--mono); background: var(--soft); padding: 1px 5px; border-radius: 5px; }
+  input, textarea, select { width: 100%; font: 500 13.5px var(--sans); color: var(--ink); background: var(--soft); border: 1.5px solid transparent; border-radius: 11px; padding: 8px 11px; }
+  input:disabled, textarea:disabled, select:disabled { opacity: .75; }
   input[type=checkbox] { width: auto; accent-color: var(--pink); }
   textarea { resize: vertical; min-height: 64px; }
-  textarea.big { min-height: 130px; }
-  .mono, .code { font-family: var(--mono) !important; font-size: 12.5px !important; }
-  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--ink); background: var(--panel); }
-  .miss { border-color: var(--warn) !important; background: color-mix(in srgb, var(--warn) 8%, var(--soft)) !important; }
-  .help { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
-  .card { border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
-  .card.open { border-color: color-mix(in srgb, var(--warn) 70%, var(--line)); }
-  .card .ch { display: flex; gap: 8px; align-items: center; }
-  .x { border: none !important; background: none !important; color: var(--muted); padding: 2px 6px !important; font-size: 16px; }
+  textarea.big { min-height: 140px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--ink); background: #fff; }
+  .mono { font-family: var(--mono) !important; font-size: 12.5px !important; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 0 4px; }
+  .item { background: var(--soft); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+  .item.open { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--warn) 60%, transparent); }
+  .item .r { display: flex; gap: 8px; align-items: center; }
+  .item input, .item textarea, .item select { background: #fff; }
+  .x { border: none !important; background: none !important; color: var(--faint); padding: 2px 6px !important; font-size: 17px; line-height: 1; }
   .x:hover { color: var(--danger); }
-  .tag { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--soft); color: var(--muted); white-space: nowrap; }
-  .tag.agent { background: color-mix(in srgb, var(--s-approved) 15%, transparent); color: var(--s-approved); }
-  .tag.req { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
-  .tag.pink { background: color-mix(in srgb, var(--pink) 15%, transparent); color: var(--pink); }
+  .tag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #fff; color: var(--muted); white-space: nowrap; }
+  .tag.a { color: var(--s-approved); } .tag.q { color: var(--warn); }
   .key { font: 500 11.5px var(--mono); color: var(--teal); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .chk { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink2); margin: 0; }
-  .coltable { display: grid; grid-template-columns: 1.3fr 1fr auto auto 24px; gap: 6px; align-items: center; margin-top: 6px; }
-  .coltable .hd { font-size: 11px; color: var(--muted); font-weight: 600; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .chip { font-size: 12px; padding: 2px 10px; border-radius: 99px; border: 1.5px dashed var(--muted); background: none; }
-  .check { border-top: 1px solid var(--line); padding: 7px 0; }
-  .check summary { cursor: pointer; display: flex; gap: 8px; align-items: center; list-style: none; font-weight: 600; }
+  .add { border-style: dashed; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+  .chip { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1.5px dashed var(--faint); background: none; color: var(--ink2); }
+  .chip:hover { border-style: solid; border-color: var(--pink); color: var(--pink); }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 12.5px; font-weight: 600; color: var(--ink2); margin: 0; }
+  .cols { display: grid; grid-template-columns: 1.3fr 1fr 44px 44px 22px; gap: 6px; align-items: center; }
+  .cols .hd { font-size: 11px; color: var(--muted); font-weight: 700; }
+  details.explain { background: var(--soft); border-radius: 14px; padding: 10px 14px; margin: 4px 0 16px; }
+  details.explain summary { cursor: pointer; font-weight: 700; font-size: 13px; }
+  details.explain ol { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink2); line-height: 1.7; }
+  .check { padding: 7px 0; border-top: 1px solid var(--line); }
+  .check summary { cursor: pointer; display: flex; gap: 8px; align-items: center; list-style: none; font-weight: 600; font-size: 13px; }
   .check summary::-webkit-details-marker { display: none; }
-  .pf { font: 700 10.5px var(--mono); width: 36px; }
-  .pf.pass { color: var(--s-verified); } .pf.fail { color: var(--danger); }
-  pre { white-space: pre-wrap; font: 11.5px/1.5 var(--mono); background: var(--soft); padding: 9px 11px; border-radius: 10px; margin: 6px 0 0; max-height: 280px; overflow: auto; }
-  .kind { font: 500 10.5px var(--mono); color: var(--muted); }
-
-  /* previews */
-  .pv { border: 1.5px solid var(--line); border-radius: 12px; margin-top: 8px; overflow: hidden; }
-  .pv .pvh { display: flex; gap: 8px; align-items: baseline; padding: 8px 12px; background: var(--soft); font-weight: 700; }
-  .pv .pvh .kind { font-weight: 500; }
-  .pv .pvb { padding: 8px 12px; overflow: auto; max-height: 300px; }
+  .pf { font: 700 10.5px var(--mono); width: 34px; } .pf.p { color: var(--s-verified); } .pf.f { color: var(--danger); }
+  pre { white-space: pre-wrap; font: 11.5px/1.5 var(--mono); background: var(--soft); padding: 9px 11px; border-radius: 10px; margin: 6px 0 0; max-height: 260px; overflow: auto; }
+  .sec { margin-bottom: 20px; } .sec > h3 { font-size: 14.5px; margin: 0 0 2px; }
+  .pv { border-radius: 14px; margin-top: 8px; overflow: hidden; background: var(--soft); }
+  .pv .pvh { padding: 8px 12px; font-weight: 700; font-size: 13px; } .pv .pvh span { font: 500 11px var(--mono); color: var(--muted); margin-left: 6px; }
+  .pv .pvb { background: #fff; margin: 0 4px 4px; border-radius: 10px; padding: 6px 8px; overflow: auto; max-height: 280px; }
   table.t { border-collapse: collapse; font: 12px var(--mono); width: 100%; }
-  table.t th { text-align: left; position: sticky; top: 0; background: var(--panel); border-bottom: 1.5px solid var(--line); padding: 4px 8px; white-space: nowrap; }
-  table.t th small { display: block; color: var(--muted); font-weight: 400; }
-  table.t td { border-bottom: 1px solid var(--line); padding: 3px 8px; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-  .stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
-  .stats span { font: 500 11.5px var(--mono); background: var(--soft); border-radius: 6px; padding: 1px 7px; }
-  .hbar { display: grid; grid-template-columns: 50px 1fr 40px; gap: 6px; align-items: center; font: 11.5px var(--mono); margin: 2px 0; }
+  table.t th { text-align: left; position: sticky; top: 0; background: #fff; border-bottom: 1.5px solid var(--line); padding: 4px 8px; white-space: nowrap; }
+  table.t th small { display: block; color: var(--faint); font-weight: 400; }
+  table.t td { border-bottom: 1px solid var(--line); padding: 3px 8px; white-space: nowrap; max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+  .stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; } .stats span { font: 500 11.5px var(--mono); background: var(--soft); border-radius: 6px; padding: 1px 7px; }
+  .hbar { display: grid; grid-template-columns: 44px 1fr 36px; gap: 6px; align-items: center; font: 11.5px var(--mono); margin: 2px 0; }
   .hbar i { display: block; height: 10px; border-radius: 4px; background: var(--teal); }
-  .problems { border: 1.5px solid var(--danger); background: color-mix(in srgb, var(--danger) 7%, var(--panel)); border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
-  .problems b { color: var(--danger); }
-  .okbox { border: 1.5px solid var(--s-verified); background: color-mix(in srgb, var(--s-verified) 8%, var(--panel)); border-radius: 12px; padding: 8px 14px; margin-top: 10px; font-weight: 700; color: var(--s-verified); }
+  .bad { background: color-mix(in srgb, var(--danger) 8%, #fff); border-radius: 12px; padding: 10px 14px; margin-top: 10px; font-size: 13px; } .bad b { color: var(--danger); }
+  .good { background: color-mix(in srgb, var(--mint) 14%, #fff); color: var(--s-verified); border-radius: 12px; padding: 8px 14px; margin-top: 10px; font-weight: 700; font-size: 13px; }
   .seg { display: inline-flex; background: var(--soft); border-radius: 99px; padding: 3px; }
-  .seg button { border: none; background: none; padding: 4px 12px; }
-  .seg button.on { background: var(--panel); box-shadow: var(--shadow); }
-  .arts img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin-top: 6px; }
-  .toast { position: fixed; top: 72px; left: calc(50% - 250px); transform: translateX(-50%); max-width: 560px; background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 12px; white-space: pre-wrap; z-index: 50; font-weight: 600; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; box-shadow: var(--shadow); }
-  .toast.show { opacity: 1; } .toast.err { background: var(--danger); color: #fff; }
-  dialog { border: none; border-radius: 18px; background: var(--panel); color: var(--ink); padding: 22px 24px; width: 440px; box-shadow: var(--shadow); }
-  dialog::backdrop { background: rgba(10,50,53,.3); }
+  .seg button { border: none; background: none; padding: 5px 12px; }
+  .seg button.on { background: #fff; box-shadow: var(--sh1); }
+  .arts img { max-width: 100%; border-radius: 12px; margin-top: 6px; }
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 13px; z-index: 60; opacity: 0; transition: .2s; pointer-events: none; max-width: 560px; white-space: pre-wrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%); } .toast.err { background: var(--danger); }
+  dialog { border: none; border-radius: 22px; background: var(--panel); color: var(--ink); padding: 24px 26px; width: 460px; box-shadow: var(--sh2); }
+  dialog::backdrop { background: rgba(10,50,53,.25); }
+  dialog h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -.02em; }
+  dialog h4 { margin: 18px 0 2px; font-size: 13px; }
+  .kbd { font: 600 11px var(--mono); background: var(--soft); border-radius: 6px; padding: 1px 6px; border: 1px solid var(--line); }
   .muted { color: var(--muted); }
-  .overview .st { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
-  .overview .st:hover .t { color: var(--pink); }
-  .overview .st .d { width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-top: 6px; flex: none; }
-  .overview .st .t { font-weight: 700; }
-  .overview .st .r { font-size: 12.5px; color: var(--muted); }
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="mark"><i></i>arx</div>
-  <div class="pname" id="pname"></div>
-  <div class="pdesc" id="pdesc"></div>
-  <div class="counts" id="counts"></div>
-  <button class="dark" onclick="addBoxCenter()">＋ Box</button>
-  <button onclick="tidy()" title="Arrange boxes left to right">Tidy</button>
-  <button onclick="fit()">Fit</button>
-  <button onclick="openRules()">Rules</button>
-</header>
-
-<div class="stage" id="stage">
+<div class="stage t-select" id="stage">
   <div class="world" id="world"><svg class="edges" id="edges"></svg><div id="nodes"></div></div>
-  <div class="empty-canvas" id="emptyc" style="display:none"><div><h2>Start your pipeline</h2><p>Double-click anywhere to add your first box,<br>or use <b>＋ Box</b> up top.</p></div></div>
-  <div class="hud"><div class="zoom"><button onclick="zoomBy(1/1.2)">−</button><span id="zl">100%</span><button onclick="zoomBy(1.2)">+</button></div>
-    <div class="tip">Double-click to add a box · drag a <b style="color:var(--teal)">●</b> output onto a box to connect · click an arrow to remove it</div>
-    <label class="chk" style="background:var(--panel);border-radius:99px;padding:5px 12px;box-shadow:var(--shadow)"><input type="checkbox" id="showArch" onchange="render()"> archived</label></div>
 </div>
 
+<header class="top">
+  <div class="brand"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a3235'/%3E%3Crect x='10' y='20' width='18' height='24' rx='5' fill='%23fffaf2'/%3E%3Crect x='36' y='20' width='18' height='24' rx='5' fill='%23f0529c'/%3E%3Cpath d='M28 32h8' stroke='%230fcb8c' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" alt=""><input id="pname" title="Rename pipeline" spellcheck="false"></div>
+  <div class="summary" id="summary"></div>
+  <div class="spacer"></div>
+  <div class="agentpill" id="agentpill" onclick="openBox(AG.sid)"><span class="pulse"></span><span id="agenttxt"></span></div>
+  <button class="iconbtn" title="Help" onclick="help.showModal()"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg></button>
+  <button class="iconbtn" title="Rules" onclick="openRules()"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+</header>
+
+<nav class="tools" id="tools">
+  <button data-tool="select" data-tip="Select & move  V" onclick="setTool('select')"><svg class="i" viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z"/></svg></button>
+  <button data-tool="box" data-tip="Box (a pipeline step)  B" onclick="setTool('box')"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 10h16"/></svg></button>
+  <button data-tool="note" data-tip="Sticky note  N" onclick="setTool('note')"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h14v10l-5 6H5z"/><path d="M14 20v-6h5"/></svg></button>
+  <button data-tool="arrow" data-tip="Arrow: drag box → box  A" onclick="setTool('arrow')"><svg class="i" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></svg></button>
+  <hr>
+  <button data-tip="Tidy up layout" onclick="tidy()"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="4" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/></svg></button>
+  <button data-tip="Fit to screen  ⇧1" onclick="fit()"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</nav>
+<div class="legend"><span><i style="--t:#0f9d8a"></i>dataframe</span><span><i style="--t:#7a5be0"></i>ndarray</span><span><i style="--t:#e0832a"></i>list</span><span><i style="--t:#2f7fd6"></i>dict</span><span><i style="--t:#9aa9a9"></i>other</span></div>
+<div class="zoom"><button onclick="zoomBy(1/1.2)">−</button><span id="zl">100%</span><button onclick="zoomBy(1.2)">+</button></div>
+<div class="empty" id="empty" style="display:none"><div class="card"><h2>Lay out your pipeline</h2><p>Each box is one step you design. Arrows carry data between them. Sticky notes are for your thinking.</p>
+  <div style="display:flex;gap:8px;justify-content:center"><button class="primary" onclick="addAtCenter('box')">＋ Add a box</button><button onclick="addAtCenter('note')">Add a note</button></div></div></div>
+
 <aside class="insp" id="insp">
-  <div id="ihead"></div>
-  <div id="gate"></div>
+  <div class="ih" id="ih"></div>
+  <div id="next"></div>
   <div class="tabs" id="tabs"></div>
-  <div class="ibody" id="ibody"></div>
-  <div class="savebar" id="savebar"><span class="muted" style="flex:1">Unsaved changes</span><button onclick="discard()">Discard</button><button class="dark" onclick="save()">Save box</button></div>
+  <div class="ib" id="ib"></div>
 </aside>
 
 <dialog id="rules">
-  <h2 style="margin:0 0 4px;font-size:20px">Rules</h2>
-  <p class="help">Apply to every box. Only you can change them.</p>
-  <label>Failed check runs before a box is handed back to you</label><input id="r-max" type="number" min="1">
-  <div class="grid3"><div><label>Min tests</label><input id="r-tests" type="number" min="0"></div><div><label>Min invariants</label><input id="r-inv" type="number" min="0"></div><div><label>Min constraints</label><input id="r-con" type="number" min="0"></div></div>
-  <label class="chk" style="margin-top:14px"><input id="r-strict" type="checkbox"> Strict contracts: dataframes must list columns, arrays dtype + shape, lists item type</label>
-  <label class="chk" style="margin-top:10px"><input id="r-opts" type="checkbox"> Let the agent attach suggested answers to its questions</label>
-  <p class="help" style="margin-top:4px">Off by default, so every idea comes from you.</p>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button onclick="rules.close()">Cancel</button><button class="dark" onclick="saveRules()">Save</button></div>
+  <h2>Rules</h2>
+  <p class="muted" style="margin:0">Apply to every box. Only you can change them.</p>
+  <h4>Default builder</h4><p class="muted" style="margin:0 0 6px;font-size:12.5px">Highlighted on each box and used by “Approve & build”. Both buttons are always shown.</p>
+  <select id="r-agent"><option value="claude">Claude Code</option><option value="codex">Codex</option><option value="custom">Custom command…</option></select>
+  <input id="r-agent-cmd" class="mono" style="margin-top:6px;display:none" placeholder="my-agent --flag (the prompt is appended)">
+  <h4>Strictness</h4>
+  <div class="g2"><div><label>Attempts before it comes back to you</label><input id="r-max" type="number" min="1"></div><div><label>Min tests per box</label><input id="r-tests" type="number" min="0"></div></div>
+  <div class="g2"><div><label>Min invariants per box</label><input id="r-inv" type="number" min="0"></div><div><label>Min constraints per box</label><input id="r-con" type="number" min="0"></div></div>
+  <label class="chk" style="margin-top:12px"><input id="r-strict" type="checkbox"> Strict contracts (dataframes list columns, arrays dtype + shape, lists item type)</label>
+  <h4>Agent questions</h4>
+  <label class="chk"><input id="r-opts" type="checkbox"> Let the agent suggest answers (off = it may only ask neutral questions)</label>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:22px"><button onclick="rules.close()">Cancel</button><button class="primary" onclick="saveRules()">Save</button></div>
+</dialog>
+<dialog id="help">
+  <h2>How arx works</h2>
+  <ol style="padding-left:18px;line-height:1.75;color:var(--ink2);font-size:13.5px">
+    <li><b>Lay out boxes.</b> Each box is a step you design. Press <span class="kbd">Tab</span> or double-click to add one. Drag from an output socket ● to another box to connect, or into empty space to add a box that's already connected.</li>
+    <li><b>Specify each box:</b> purpose, approach, decisions and constraints, a typed contract, and checks.</li>
+    <li><b>Approve.</b> Only approved boxes can be built, and the agent implements exactly what you wrote.</li>
+    <li><b>Build.</b> Click <i>Build with Claude</i> or <i>Build with Codex</i>, or run <code>/arx-build</code> in Claude Code.</li>
+    <li><b>Checks pass → the box locks.</b> If it keeps failing, it comes back to you.</li></ol>
+  <h4>Shortcuts</h4>
+  <div class="g2" style="font-size:13px;line-height:2"><div><span class="kbd">V</span> select · <span class="kbd">B</span> box</div><div><span class="kbd">N</span> note · <span class="kbd">A</span> arrow</div><div><span class="kbd">Tab</span> / double-click quick add</div><div><span class="kbd">Space</span>+drag pan</div><div><span class="kbd">⌘</span>+scroll zoom · <span class="kbd">⇧1</span> fit</div><div><span class="kbd">Del</span> delete note/arrow</div><div><span class="kbd">Esc</span> deselect</div></div>
+  <div style="text-align:right;margin-top:18px"><button class="primary" onclick="help.close()">Got it</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
+<div id="stale" style="display:none;position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:70;background:var(--warn);color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:12px;box-shadow:var(--sh2)">arx was updated. Stop <code style="background:rgba(255,255,255,.25);color:#fff">arx ui</code> (Ctrl-C) and run it again, then refresh.</div>
 
 <script>
-/* ================= state ================= */
-const STATUS = {
-  draft:    { c: "var(--s-draft)",    label: "Spec",     explain: "This box has gaps. The agent can't write any code for it until you fill them in." },
-  ready:    { c: "var(--s-ready)",    label: "Ready",    explain: "The spec is complete. Approve it so the agent can implement it exactly as written." },
-  approved: { c: "var(--s-approved)", label: "Building", explain: "The agent is implementing this box. It's done when every check passes." },
-  failing:  { c: "var(--s-failing)",  label: "Failing",  explain: "Checks fail. The agent may fix implementation bugs, but not change your method or your checks." },
-  blocked:  { c: "var(--s-blocked)",  label: "Needs you", explain: "Failed too many times. The agent has stopped. You decide what's next." },
-  verified: { c: "var(--s-verified)", label: "Verified", explain: "All checks pass. The code is locked, so the agent can't modify it." },
-  stale:    { c: "var(--s-stale)",    label: "Stale",    explain: "Was verified, but this box or an upstream box changed. Re-run the checks." },
-  tampered: { c: "var(--s-tampered)", label: "Tampered", explain: "Locked code changed after verification. Review it, then restore the file or unlock." },
-  archived: { c: "var(--s-archived)", label: "Archived", explain: "Removed from the pipeline and kept for reference." },
+/* ===================== state ===================== */
+const ST = {
+  draft:    { c: "var(--s-draft)",    label: "Spec",      h: "Finish the spec", p: "The agent can't write code for this box until these are filled in." },
+  ready:    { c: "var(--s-ready)",    label: "Ready",     h: "Ready to approve", p: "Approving lets the agent implement exactly this spec." },
+  approved: { c: "var(--s-approved)", label: "Approved",  h: "Ready to build", p: "Approved. The agent implements it, then the checks run." },
+  failing:  { c: "var(--s-failing)",  label: "Failing",   h: "Checks are failing", p: "The agent may fix bugs, but not change your method or checks." },
+  blocked:  { c: "var(--s-blocked)",  label: "Your call", h: "Back to you", p: "It failed too many times, so the agent stopped. You decide what's next." },
+  verified: { c: "var(--s-verified)", label: "Verified",  h: "Verified and locked", p: "All checks pass. The agent can't touch this code anymore." },
+  stale:    { c: "var(--s-stale)",    label: "Stale",     h: "Needs re-checking", p: "This box or something upstream changed since it was verified." },
+  tampered: { c: "var(--s-tampered)", label: "Tampered",  h: "Locked code was edited", p: "Someone changed verified code. Review it, then restore or unlock." },
+  archived: { c: "var(--s-archived)", label: "Archived",  h: "Archived", p: "Out of the pipeline, kept for reference." },
 };
-const W = 260, HEAD = 66, PAD = 6, ROW = 28, FOOT = 34;
-let S = null, sel = null, draft = null, dirty = false, tab = "spec";
-let view = JSON.parse(localStorage.getItem("arx.view") || '{"x":40,"y":40,"z":1}');
-let pos = {}, drag = null, tryState = {};
+const W = 244, HEAD = 62, PADY = 6, ROW = 26, FOOT = 32, NW = 200;
+let S = null, sel = null, draft = null, tab = "spec", tool = "select";
+let selNote = null, selEdge = null, editingNote = null;
+let view = JSON.parse(localStorage.getItem("arx.v2") || '{"x":120,"y":110,"z":1}');
+let pos = {}, drag = null, space = false, tryState = {}, AG = { running: false, events: [] }, saveT = null, saving = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const clone = o => JSON.parse(JSON.stringify(o ?? null));
 const byId = id => S?.stages.find(s => s.id === id);
+const noteById = id => S?.notes.find(n => n.id === id);
 const isOpen = d => d.answer === null || d.answer === undefined || String(d.answer).trim() === "";
-const jsonish = v => (v === undefined || v === null || (typeof v === "object" && !Object.keys(v).length)) ? "" : JSON.stringify(v);
+const jsonish = v => (v === undefined || v === null || (typeof v === "object" && !Object.keys(v).length)) ? "" : (typeof v === "string" ? v : JSON.stringify(v));
+const LOCKED = ["verified", "stale", "tampered", "archived"];
+const AGENT_LABEL = a => ({ claude: "Claude", codex: "Codex" }[a] || "custom agent");
+const agentName = () => AGENT_LABEL(AG.running ? AG.agent : S?.policy.agent);
 
-function toast(m, err) { const t = $("toast"); t.textContent = m; t.className = "toast show" + (err ? " err" : ""); clearTimeout(t._h); t._h = setTimeout(() => t.className = "toast", err ? 7000 : 2400); }
+function toast(m, err) { const t = $("toast"); t.textContent = m; t.className = "toast show" + (err ? " err" : ""); clearTimeout(t._h); t._h = setTimeout(() => t.className = "toast", err ? 6500 : 2200); }
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const j = await r.json();
-  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
-  return j;
+  const j = await r.json(); if (!r.ok || j.error) throw new Error(j.error || r.statusText); return j;
 }
 async function load(poll) {
   try { S = await api("/api/state"); } catch (e) { if (!poll) toast(e.message, true); return; }
-  $("pname").textContent = S.pipeline.name || "pipeline";
-  $("pdesc").textContent = S.pipeline.description || "";
-  const n = {}; S.stages.forEach(s => n[s.status] = (n[s.status] || 0) + 1);
-  $("counts").innerHTML = Object.entries(STATUS).filter(([k]) => n[k]).map(([k, m]) => `<span class="count" style="--c:${m.c}">${n[k]} ${m.label.toLowerCase()}</span>`).join("");
-  if (!drag) render();
-  if (sel && !byId(sel)) select(null);
-  const st = sel && byId(sel);
-  const sig = st ? JSON.stringify([st.spec, st.decisions]) : "";
-  const rsig = st ? JSON.stringify([st.status, st.result?.at, st.reasons, st.artifacts]) : JSON.stringify(S.stages.map(s => [s.id, s.status]));
-  if (!poll || (!dirty && sig !== load._sig)) renderInspector(true);
-  else if (rsig !== load._rsig) { renderHead(); renderGate(); if (tab === "checks" && !dirty) renderTab(); if (!sel) renderTab(); }
-  load._sig = sig; load._rsig = rsig;
+  S.notes ||= []; S.agent ||= {}; S.port_types ||= ["dataframe", "ndarray", "list", "dict", "str", "int", "float", "bool", "any"]; S.dtypes ||= ["any", "str", "int", "float", "bool"];
+  $("stale").style.display = (S.stale_server || S.stale_server === undefined) ? "" : "none";
+  if (document.activeElement !== $("pname")) $("pname").value = S.pipeline.name || "pipeline";
+  document.title = `${S.pipeline.name || "pipeline"} · arx`;
+  const act = S.stages.filter(s => s.status !== "archived"), n = {}; act.forEach(s => n[s.status] = (n[s.status] || 0) + 1);
+  $("summary").innerHTML = act.length ? `<span><b>${n.verified || 0}</b> of ${act.length} verified</span>` + Object.entries(ST).filter(([k]) => k !== "verified" && n[k]).map(([k, m]) => `<span style="--c:${m.c}"><i class="d"></i>${n[k]} ${m.label.toLowerCase()}</span>`).join("") : `<span>No boxes yet</span>`;
+  if (S.agent.running && !pollAgent.on) pollAgent();
+  if (!drag && !editingNote) render();
+  if (sel && !byId(sel)) closeBox();
+  if (sel) {
+    const st = byId(sel), sig = JSON.stringify([st.spec, st.decisions]);
+    const focused = $("insp").contains(document.activeElement);
+    if (!poll) renderInspector(true);
+    else if (sig !== load._sig && !focused && !saveT && !saving) renderInspector(true);
+    else { renderHead(false); renderNext(); renderTabs(); if (tab === "checks" && !focused) renderTab(); }
+    load._sig = sig;
+  }
 }
 
-/* ================= canvas ================= */
+/* ===================== canvas ===================== */
 function layoutDefaults() {
-  const act = S.stages.filter(s => s.status !== "archived");
-  const map = Object.fromEntries(act.map(s => [s.id, s])), depth = {};
+  const act = S.stages.filter(s => s.status !== "archived"), map = Object.fromEntries(act.map(s => [s.id, s])), depth = {};
   const d = (id, seen = new Set()) => { if (depth[id] !== undefined) return depth[id]; if (seen.has(id)) return 0; seen.add(id);
     const ds = (map[id]?.deps || []).filter(x => map[x]); return depth[id] = ds.length ? 1 + Math.max(...ds.map(x => d(x, seen))) : 0; };
   const lanes = {};
-  S.stages.forEach(s => { const l = s.status === "archived" ? 0 : d(s.id); lanes[l] = (lanes[l] || 0) + 1; s._auto = { x: 60 + l * 360, y: 80 + (lanes[l] - 1) * 260 }; });
+  S.stages.forEach(s => { const l = s.status === "archived" ? 0 : d(s.id); lanes[l] = (lanes[l] || 0) + 1; s._auto = { x: 80 + l * 340, y: 80 + (lanes[l] - 1) * 240 }; });
 }
 const P = s => pos[s.id] || s.spec.ui || s._auto;
-const visible = () => S.stages.filter(s => s.status !== "archived" || $("showArch").checked);
-function nodeH(s) { const n = (s.spec.inputs || []).length + (s.spec.outputs || []).length; return HEAD + PAD * 2 + Math.max(1, n) * ROW + FOOT; }
-function inPort(s, name) { const i = (s.spec.inputs || []).findIndex(x => x.name === name), p = P(s); return { x: p.x, y: p.y + HEAD + PAD + i * ROW + ROW / 2 }; }
-function outPort(s, name) { const nIn = (s.spec.inputs || []).length, j = (s.spec.outputs || []).findIndex(x => x.name === name), p = P(s); return { x: p.x + W, y: p.y + HEAD + PAD + (nIn + j) * ROW + ROW / 2 }; }
-const curve = (a, b) => { const dx = Math.max(60, Math.abs(b.x - a.x) / 2); return `M${a.x},${a.y} C${a.x + dx},${a.y} ${b.x - dx},${b.y} ${b.x},${b.y}`; };
+const NP = n => pos["note:" + n.id] || { x: n.x, y: n.y };
+const shown = () => S.stages.filter(s => s.status !== "archived");
+function boxH(s) { const n = (s.spec.inputs || []).length + (s.spec.outputs || []).length + (s.id === sel && !LOCKED.includes(s.status) ? 1 : 0); return HEAD + PADY * 2 + Math.max(1, n) * ROW + FOOT; }
+function noteH(n) { const t = n.text || ""; return Math.max(120, 38 + t.split("\n").reduce((a, l) => a + Math.max(1, Math.ceil(l.length / 22)), 0) * 20); }
+function inPt(s, name) { const i = Math.max(0, (s.spec.inputs || []).findIndex(x => x.name === name)), p = P(s); return { x: p.x, y: p.y + HEAD + PADY + i * ROW + ROW / 2 }; }
+function outPt(s, name) { const ni = (s.spec.inputs || []).length, j = Math.max(0, (s.spec.outputs || []).findIndex(x => x.name === name)), p = P(s); return { x: p.x + W, y: p.y + HEAD + PADY + (ni + j) * ROW + ROW / 2 }; }
+function rect(kind, id) { if (kind === "box") { const s = byId(id), p = P(s); return { x: p.x, y: p.y, w: W, h: boxH(s) }; } const n = noteById(id), p = NP(n); return { x: p.x, y: p.y, w: NW, h: noteH(n) }; }
+function sidePts(a, b) { const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  return ac.x <= bc.x ? [{ x: a.x + a.w, y: ac.y }, { x: b.x, y: bc.y }] : [{ x: a.x, y: ac.y }, { x: b.x + b.w, y: bc.y }]; }
+const curve = (a, b) => { const dx = Math.max(50, Math.abs(b.x - a.x) / 2) * (b.x >= a.x ? 1 : -1); return `M${a.x},${a.y} C${a.x + dx},${a.y} ${b.x - dx},${b.y} ${b.x},${b.y}`; };
 
-function footLine(s) {
-  if (s.status === "draft") return `<b>${s.reasons.length} open</b><span class="bar"><i style="width:${Math.round(100 * Math.max(0, 1 - s.issues.length / (6 + s.decisions.length)))}%"></i></span>`;
-  if (s.status === "failing") return `<b>failing</b> · attempt ${s.attempts}/${S.policy.max_attempts}`;
-  if (s.status === "blocked") return `<b>blocked</b> · your decision`;
-  if (s.status === "approved") return `<b>${s.files_exist.length ? "agent implementing" : "waiting for agent"}</b>`;
-  if (s.status === "verified") return `<b>verified</b> · ${s.result?.checks?.length || 0} checks pass`;
-  if (s.status === "ready") return `<b>ready</b> · needs your approval`;
-  return `<b>${STATUS[s.status].label.toLowerCase()}</b>`;
+const TCOL = { dataframe: "#0f9d8a", series: "#2f9bd6", ndarray: "#7a5be0", list: "#e0832a", tuple: "#e0832a", dict: "#2f7fd6" };
+function tcol(t) { const b = String(t || "").split("[")[0].trim().toLowerCase(); return TCOL[b] || "#9aa9a9"; }
+const KIND_LABEL = { data_processing: ["Data processing", "Load, clean, filter", "🧹"], embedding: ["Embedding", "Text → vectors", "🧬"], clustering: ["Clustering", "Group similar items", "🫧"], custom: ["Custom step", "Anything else", "◻️"] };
+let qaState = null, lastMouse = { x: innerWidth / 2, y: innerHeight / 2 };
+function quickAdd(cx, cy, wire) {
+  closeQA(); const w = { x: (cx - view.x) / view.z, y: (cy - view.y) / view.z };
+  const items = Object.keys(S.kinds).map(k => ({ kind: k, label: (KIND_LABEL[k] || [k])[0], sub: (KIND_LABEL[k] || [, ""])[1], ic: (KIND_LABEL[k] || [, , "◻️"])[2] }));
+  if (!wire) items.push({ note: true, label: "Sticky note", sub: "An idea or open question", ic: "🗒️" });
+  qaState = { w, wire, items, q: "", i: 0 };
+  const el = document.createElement("div"); el.className = "qa"; el.id = "qa";
+  el.style.left = Math.min(cx, innerWidth - 300) + "px"; el.style.top = Math.min(cy, innerHeight - 330) + "px";
+  el.innerHTML = `<input id="qa-in" placeholder="${wire ? "Add a box connected to this…" : "Add…"}" autocomplete="off"><div id="qa-list"></div>`;
+  document.body.appendChild(el); drawQA();
+  const inp = $("qa-in"); inp.focus();
+  inp.addEventListener("input", () => { qaState.q = inp.value.toLowerCase(); qaState.i = 0; drawQA(); });
+  inp.addEventListener("keydown", e => { const f = qaFiltered(); if (e.key === "ArrowDown") { qaState.i = Math.min(f.length - 1, qaState.i + 1); drawQA(); e.preventDefault(); } else if (e.key === "ArrowUp") { qaState.i = Math.max(0, qaState.i - 1); drawQA(); e.preventDefault(); } else if (e.key === "Enter") { if (f[qaState.i]) qaPick(f[qaState.i]); } else if (e.key === "Escape") closeQA(); e.stopPropagation(); });
+}
+const qaFiltered = () => qaState.items.filter(x => !qaState.q || (x.label + " " + x.sub).toLowerCase().includes(qaState.q));
+function drawQA() { const f = qaFiltered(); $("qa-list").innerHTML = f.map((x, i) => `<div class="it ${i === qaState.i ? "on" : ""}" onmousedown="event.preventDefault();qaPick(qaFiltered()[${i}])"><span class="ic" style="background:var(--soft)">${x.ic}</span><div>${esc(x.label)}<small>${esc(x.sub)}</small></div></div>`).join("") || `<p class="hint" style="padding:6px 10px">Nothing matches. Try “custom”.</p>`; }
+function closeQA() { $("qa")?.remove(); qaState = null; }
+async function qaPick(item) {
+  const { w, wire } = qaState; closeQA();
+  try {
+    if (item.note) { const r = await api("/api/note", { x: w.x - NW / 2, y: w.y - 30, text: "", color: "yellow" }); await load(true); editNote(r.id); return; }
+    const r = await api("/api/stages", { title: item.kind === "custom" ? "Untitled box" : item.label, kind: item.kind, x: wire ? w.x : w.x - W / 2, y: w.y - 40 });
+    if (wire?.from) await api("/api/connect", { from: wire.from, to: r.id });
+    else if (wire?.box) { const outs = byId(wire.box).spec.outputs || []; if (outs.length === 1) await api("/api/connect", { from: `${wire.box}.${outs[0].name}`, to: r.id }); else await api("/api/depend", { from: wire.box, to: r.id }); }
+    await load(true); openBox(r.id, "spec"); setTimeout(() => { const t = $("f-title"); t?.focus(); t?.select(); }, 60);
+  } catch (e) { toast(e.message, true); }
+}
+document.addEventListener("mousemove", e => lastMouse = { x: e.clientX, y: e.clientY });
+document.addEventListener("mousedown", e => { if ($("qa") && !e.target.closest(".qa")) closeQA(); }, true);
+
+function foot(s) {
+  if (s.status === "draft") { const tot = 6 + s.decisions.length; return `<span>${s.reasons.length} to fill in</span><span class="bar"><i style="width:${Math.round(100 * Math.max(.04, 1 - s.issues.length / tot))}%"></i></span>`; }
+  if (AG.running && AG.sid === s.id) return `<span class="pulse"></span><span>${AGENT_LABEL(AG.agent)} is building…</span>`;
+  return esc({ ready: "needs your approval", approved: s.files_exist.length ? "built, run checks" : "ready to build", failing: `failing · attempt ${s.attempts}/${S.policy.max_attempts}`,
+    blocked: "waiting on your decision", verified: `${s.result?.checks?.length || 0} checks pass`, stale: "re-check needed", tampered: "locked code edited" }[s.status] || "");
 }
 function render() {
   if (!S) return;
   layoutDefaults();
-  const vs = visible(), ids = new Set(vs.map(s => s.id));
-  $("emptyc").style.display = vs.length ? "none" : "";
-  $("nodes").innerHTML = vs.map(s => {
-    const m = STATUS[s.status], sp = s.spec, p = P(s);
-    const ins = (sp.inputs || []).map(i => `<div class="port in"><span class="dot"></span><span class="pn">${esc(i.name)}</span><span class="pt">${esc(i.type || "")}</span></div>`);
-    const outs = (sp.outputs || []).map(o => `<div class="port out"><span class="pt">${esc(o.type || "")}</span><span class="pn">${esc(o.name)}</span><span class="dot" data-out="${esc(s.id)}.${esc(o.name)}" title="drag onto a box to connect"></span></div>`);
-    const rows = ins.concat(outs);
-    return `<div class="node ${s.id === sel ? "sel" : ""} ${sp.variant_of ? "alt" : ""}" data-id="${esc(s.id)}" style="left:${p.x}px;top:${p.y}px;--c:${m.c}">
-      <div class="nhead" data-head>${["verified", "stale"].includes(s.status) ? `<span class="nlock">🔒</span>` : ""}
-        <div class="ntitle">${esc(sp.title || s.id)}</div>
-        <div class="nsub"><span class="spill">${m.label}</span><span class="kchip">${esc(sp.kind || "custom")}</span>${sp.variant_of ? `<span class="kchip">alt of ${esc(sp.variant_of)}</span>` : ""}</div></div>
-      <div class="nports">${rows.length ? rows.join("") : `<div class="port none">no inputs or outputs yet</div>`}</div>
-      <div class="nfoot">${footLine(s)}</div></div>`;
+  const vs = shown(), ids = new Set(vs.map(s => s.id));
+  $("empty").style.display = vs.length || S.notes.length ? "none" : "";
+  let h = vs.map(s => {
+    const m = ST[s.status], sp = s.spec, p = P(s);
+    const rows = (sp.inputs || []).map(i => `<div class="port in"><span class="sock" style="--t:${tcol(i.type)}"></span><b>${esc(i.name)}</b><i>${esc(i.type || "")}</i></div>`)
+      .concat((sp.outputs || []).map(o => `<div class="port out"><i>${esc(o.type || "")}</i><b>${esc(o.name)}</b><span class="sock" data-sock="${s.id}.${esc(o.name)}" style="--t:${tcol(o.type)}" title="Drag to a box, or into empty space to add one"></span></div>`));
+    return `<div class="box ${s.id === sel ? "sel" : ""} ${sp.variant_of ? "alt" : ""}" data-box="${s.id}" style="left:${p.x}px;top:${p.y}px;--c:${m.c}">
+      <div class="handle" data-handle="box:${s.id}" title="Drag to connect">+</div>
+      <div class="bh">${LOCKED.includes(s.status) && s.status !== "archived" ? `<span class="lock">🔒</span>` : ""}<div class="bt">${esc(sp.title || s.id)}</div>
+        <div class="bs"><span class="st">${m.label}</span><span class="kd">${esc(sp.kind || "custom")}</span>${sp.variant_of ? `<span class="kd">· alt</span>` : ""}</div></div>
+      <div class="ports">${rows.join("") || (s.id === sel ? "" : `<div class="port none">no inputs or outputs yet</div>`)}${s.id === sel && !LOCKED.includes(s.status) ? `<div class="port out addout" data-addout="${s.id}">＋ output</div>` : ""}</div>
+      <div class="bf">${foot(s)}</div></div>`;
   }).join("");
+  h += S.notes.map(n => { const p = NP(n), ed = editingNote === n.id;
+    return `<div class="note c-${esc(n.color || "yellow")} ${selNote === n.id ? "sel" : ""}" data-note="${n.id}" style="left:${p.x}px;top:${p.y}px">
+      <div class="handle" data-handle="note:${n.id}" title="Drag to link">+</div>
+      ${ed ? `<textarea id="note-ed">${esc(n.text)}</textarea>` : (n.text ? `<div class="tx">${esc(n.text)}</div>` : `<span class="ph">Double-click to write…</span>`)}</div>`; }).join("");
+  if (selNote && !editingNote && noteById(selNote)) { const p = NP(noteById(selNote));
+    h += `<div class="notebar" style="left:${p.x}px;top:${p.y}px">${["yellow", "pink", "mint", "blue", "sand"].map(c => `<button class="swatch c-${c}" onclick="noteColor('${c}')"></button>`).join("")}
+      <button class="quiet sm" onclick="editNote('${selNote}')">Edit</button><button class="quiet sm danger" onclick="delNote('${selNote}')">Delete</button></div>`; }
+  $("nodes").innerHTML = h;
   let e = "";
+  const hl = k => selEdge && selEdge.k === k ? " sel" : "";
   for (const s of vs) {
     for (const i of s.spec.inputs || []) {
-      const [up, on] = String(i.from || "").split(".");
-      const u = byId(up); if (!u || !ids.has(up) || !(u.spec.outputs || []).some(o => o.name === on)) continue;
-      const a = outPort(u, on), b = inPort(s, i.name);
-      e += `<g><path class="edge-hit" d="${curve(a, b)}" data-to="${esc(s.id)}" data-input="${esc(i.name)}"/><path class="edge" d="${curve(a, b)}"/></g>`;
+      const [up, on] = String(i.from || "").split("."); const u = byId(up);
+      if (!u || !ids.has(up) || !(u.spec.outputs || []).some(o => o.name === on)) continue;
+      const a = outPt(u, on), b = inPt(s, i.name), k = `in:${s.id}:${i.name}`;
+      const col = tcol((u.spec.outputs || []).find(o => o.name === on)?.type);
+      e += `<g><path class="ehit" d="${curve(a, b)}" data-edge="${k}"/><path class="edge${hl(k)}" style="stroke:${hl(k) ? "var(--pink)" : col};stroke-width:2.6" d="${curve(a, b)}"/></g>`;
     }
     for (const dep of s.spec.depends_on || []) {
-      const u = byId(dep); if (!u || !ids.has(dep)) continue;
-      const pu = P(u), ps = P(s), a = { x: pu.x + W, y: pu.y + HEAD / 2 }, b = { x: ps.x, y: ps.y + HEAD / 2 };
-      e += `<g><path class="edge-hit" d="${curve(a, b)}" data-to="${esc(s.id)}" data-dep="${esc(dep)}"/><path class="edge dep" d="${curve(a, b)}"/></g>`;
+      if (!byId(dep) || !ids.has(dep)) continue;
+      const [a, b] = sidePts(rect("box", dep), rect("box", s.id)), k = `dep:${s.id}:${dep}`;
+      e += `<g><path class="ehit" d="${curve(a, b)}" data-edge="${k}"/><path class="edge dep${hl(k)}" d="${curve(a, b)}" marker-end="url(#ah)"/></g>`;
     }
   }
-  if (drag?.type === "wire") e += `<path class="edge temp" d="${curve(drag.a, drag.b)}"/>`;
-  $("edges").innerHTML = e;
+  for (const n of S.notes) for (const l of n.links || []) {
+    const t = byId(l) && ids.has(l) ? rect("box", l) : noteById(l) ? rect("note", l) : null; if (!t) continue;
+    const [a, b] = sidePts(rect("note", n.id), t), k = `link:${n.id}:${l}`;
+    e += `<g><path class="ehit" d="${curve(a, b)}" data-edge="${k}"/><path class="edge link${hl(k)}" d="${curve(a, b)}"/></g>`;
+  }
+  if (drag?.type === "wire") e += `<path class="edge temp" style="${drag.out ? `stroke:${drag.col}` : ""}" d="${curve(drag.a, drag.b)}"/>`;
+  $("edges").innerHTML = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9 z" fill="#7d9293"/></marker></defs>` + e;
   applyView();
+  const ed = $("note-ed"); if (ed) { ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); ed.addEventListener("blur", saveNoteText); ed.addEventListener("keydown", ev => { if (ev.key === "Escape") ed.blur(); ev.stopPropagation(); }); }
 }
-function applyView() { $("world").style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; $("zl").textContent = Math.round(view.z * 100) + "%"; localStorage.setItem("arx.view", JSON.stringify(view)); }
-function toWorld(ev) { const r = $("stage").getBoundingClientRect(); return { x: (ev.clientX - r.left - view.x) / view.z, y: (ev.clientY - r.top - view.y) / view.z }; }
-function zoomBy(f, cx, cy) {
-  const r = $("stage").getBoundingClientRect(); cx ??= r.width / 2; cy ??= r.height / 2;
-  const z = Math.min(2.2, Math.max(0.25, view.z * f)); const k = z / view.z;
-  view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.z = z; applyView();
-}
+function applyView() { $("world").style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`; $("zl").textContent = Math.round(view.z * 100) + "%"; localStorage.setItem("arx.v2", JSON.stringify(view)); }
+function toWorld(ev) { return { x: (ev.clientX - view.x) / view.z, y: (ev.clientY - view.y) / view.z }; }
+function zoomBy(f, cx = innerWidth / 2, cy = innerHeight / 2) { const z = Math.min(2.5, Math.max(0.2, view.z * f)), k = z / view.z; view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.z = z; applyView(); }
 function fit() {
-  const vs = visible(); if (!vs.length) return;
-  const xs = vs.map(s => P(s).x), ys = vs.map(s => P(s).y), x2 = vs.map(s => P(s).x + W), y2 = vs.map(s => P(s).y + nodeH(s));
-  const minx = Math.min(...xs), miny = Math.min(...ys), maxx = Math.max(...x2), maxy = Math.max(...y2);
-  const r = $("stage").getBoundingClientRect(), z = Math.min(1.2, Math.max(0.3, Math.min((r.width - 120) / (maxx - minx), (r.height - 140) / (maxy - miny))));
-  view = { z, x: (r.width - (maxx - minx) * z) / 2 - minx * z, y: (r.height - (maxy - miny) * z) / 2 - miny * z }; applyView();
+  const rs = shown().map(s => rect("box", s.id)).concat(S.notes.map(n => rect("note", n.id))); if (!rs.length) return;
+  const x0 = Math.min(...rs.map(r => r.x)), y0 = Math.min(...rs.map(r => r.y)), x1 = Math.max(...rs.map(r => r.x + r.w)), y1 = Math.max(...rs.map(r => r.y + r.h));
+  const right = sel ? 470 : 20, W0 = innerWidth - 90 - right, H0 = innerHeight - 140;
+  const z = Math.min(1.15, Math.max(0.3, Math.min(W0 / (x1 - x0), H0 / (y1 - y0))));
+  view = { z, x: 80 + (W0 - (x1 - x0) * z) / 2 - x0 * z, y: 80 + (H0 - (y1 - y0) * z) / 2 - y0 * z }; applyView();
 }
 async function tidy() {
-  if (!confirm("Arrange every box left to right by its connections?")) return;
   layoutDefaults();
-  try { for (const s of visible()) if (s.status !== "archived") await api(`/api/move/${s.id}`, s._auto); pos = {}; await load(); fit(); } catch (e) { toast(e.message, true); }
+  try { for (const s of shown()) await api(`/api/move/${s.id}`, s._auto); pos = {}; await load(true); fit(); toast("Tidied"); } catch (e) { toast(e.message, true); }
 }
+function setTool(t) { tool = t; document.querySelectorAll(".tools [data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t)); $("stage").className = "stage t-" + t; }
 
-/* pointer interactions */
+/* ---- pointer ---- */
+function targetAt(ev) { const el = document.elementFromPoint(ev.clientX, ev.clientY); const b = el?.closest("[data-box]"), n = el?.closest("[data-note]"); return b ? { kind: "box", id: b.dataset.box } : n ? { kind: "note", id: n.dataset.note } : null; }
 $("stage").addEventListener("mousedown", ev => {
-  if (ev.button !== 0) return;
-  const dot = ev.target.closest(".dot[data-out]");
-  const head = ev.target.closest("[data-head]");
-  const node = ev.target.closest(".node");
-  const hit = ev.target.closest(".edge-hit");
-  if (dot) { const [sid, name] = dot.dataset.out.split("."); const a = outPort(byId(sid), name); drag = { type: "wire", from: dot.dataset.out, src: sid, a, b: a }; ev.preventDefault(); return; }
-  if (head) { const id = node.dataset.id, p = P(byId(id)), w = toWorld(ev); drag = { type: "node", id, dx: w.x - p.x, dy: w.y - p.y, moved: false, sx: ev.clientX, sy: ev.clientY }; ev.preventDefault(); return; }
-  if (node) { select(node.dataset.id); return; }
-  if (hit) { removeEdge(hit); return; }
-  if (ev.target.closest(".hud")) return;
-  drag = { type: "pan", sx: ev.clientX, sy: ev.clientY, vx: view.x, vy: view.y, moved: false }; $("stage").classList.add("panning");
+  if (ev.button !== 0 || ev.target.closest(".notebar") || ev.target.closest("textarea")) return;
+  const w = toWorld(ev), handle = ev.target.closest("[data-handle]"), box = ev.target.closest("[data-box]"), note = ev.target.closest("[data-note]"), edge = ev.target.closest("[data-edge]");
+  if (space) return startPan(ev);
+  if (tool === "box" || tool === "note") { ev.preventDefault(); create(tool, w.x - (tool === "box" ? W / 2 : NW / 2), w.y - 30); setTool("select"); return; }
+  const addout = ev.target.closest("[data-addout]");
+  if (addout) { ev.preventDefault(); tab = "contract"; renderTabs(); addPort("outputs"); setTimeout(() => { const els = $("ib").querySelectorAll('[data-p="outputs"][data-f="name"]'); els[els.length - 1]?.focus(); }, 50); return; }
+  const sock = ev.target.closest("[data-sock]");
+  if (sock) { const [sid, on] = sock.dataset.sock.split("."); const a = outPt(byId(sid), on); drag = { type: "wire", kind: "box", id: sid, out: on, col: tcol((byId(sid).spec.outputs || []).find(o => o.name === on)?.type), a, b: a }; ev.preventDefault(); return; }
+  if (handle || (tool === "arrow" && (box || note))) {
+    const [kind, id] = handle ? handle.dataset.handle.split(":") : box ? ["box", box.dataset.box] : ["note", note.dataset.note];
+    const r = rect(kind, id), a = { x: r.x + r.w, y: r.y + Math.min(r.h / 2, 32) };
+    drag = { type: "wire", kind, id, a, b: a }; ev.preventDefault(); return;
+  }
+  if (box || note) {
+    const kind = box ? "box" : "note", id = box ? box.dataset.box : note.dataset.note, p = kind === "box" ? P(byId(id)) : NP(noteById(id));
+    drag = { type: "move", kind, id, dx: w.x - p.x, dy: w.y - p.y, sx: ev.clientX, sy: ev.clientY, moved: false }; ev.preventDefault(); return;
+  }
+  if (edge) { selEdge = { k: edge.dataset.edge }; selNote = null; render(); showEdgeMenu(ev); return; }
+  startPan(ev);
 });
+function startPan(ev) { drag = { type: "pan", sx: ev.clientX, sy: ev.clientY, vx: view.x, vy: view.y, moved: false }; $("stage").classList.add("panning"); }
 window.addEventListener("mousemove", ev => {
   if (!drag) return;
-  if (drag.type === "pan") { view.x = drag.vx + ev.clientX - drag.sx; view.y = drag.vy + ev.clientY - drag.sy; drag.moved = drag.moved || Math.abs(ev.clientX - drag.sx) + Math.abs(ev.clientY - drag.sy) > 3; applyView(); }
-  else if (drag.type === "node") {
+  if (drag.type === "pan") { view.x = drag.vx + ev.clientX - drag.sx; view.y = drag.vy + ev.clientY - drag.sy; drag.moved ||= Math.abs(ev.clientX - drag.sx) + Math.abs(ev.clientY - drag.sy) > 3; applyView(); }
+  else if (drag.type === "move") {
     if (!drag.moved && Math.abs(ev.clientX - drag.sx) + Math.abs(ev.clientY - drag.sy) < 4) return;
-    drag.moved = true; const w = toWorld(ev); pos[drag.id] = { x: Math.round(w.x - drag.dx), y: Math.round(w.y - drag.dy) }; render();
+    drag.moved = true; const w = toWorld(ev); pos[(drag.kind === "note" ? "note:" : "") + drag.id] = { x: Math.round(w.x - drag.dx), y: Math.round(w.y - drag.dy) }; render();
   } else if (drag.type === "wire") {
-    drag.b = toWorld(ev); render();
-    const t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".node"); if (t && t.dataset.id !== drag.src) t.classList.add("drop");
+    drag.b = toWorld(ev); render(); const t = targetAt(ev);
+    if (t && !(t.kind === drag.kind && t.id === drag.id)) document.querySelector(t.kind === "box" ? `[data-box="${t.id}"]` : `[data-note="${t.id}"]`)?.classList.add("drop");
   }
 });
 window.addEventListener("mouseup", async ev => {
   if (!drag) return; const d = drag; drag = null; $("stage").classList.remove("panning");
-  if (d.type === "pan" && !d.moved && ev.target.closest("#stage") && !ev.target.closest(".node")) { if (sel) select(null); }
-  if (d.type === "node") {
-    if (!d.moved) { select(d.id); return; }
-    try { await api(`/api/move/${d.id}`, pos[d.id]); await load(true); delete pos[d.id]; } catch (e) { toast(e.message, true); }
+  if (d.type === "pan") { if (!d.moved && ev.target.closest("#stage")) { selNote = null; selEdge = null; hidePop(); if (sel) closeBox(); else render(); } return; }
+  if (d.type === "move") {
+    if (!d.moved) { if (d.kind === "box") { selNote = null; selEdge = null; openBox(d.id); } else { selNote = d.id; selEdge = null; render(); } return; }
+    const k = (d.kind === "note" ? "note:" : "") + d.id;
+    try { if (d.kind === "box") await api(`/api/move/${d.id}`, pos[k]); else await api("/api/note", { id: d.id, ...pos[k] }); delete pos[k]; await load(true); } catch (e) { toast(e.message, true); }
+    return;
   }
   if (d.type === "wire") {
-    const t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".node");
-    render();
-    if (!t || t.dataset.id === d.src) return;
-    const to = t.dataset.id, ts = byId(to);
-    if (ts.locked_at && !confirm(`“${ts.spec.title}” is verified. Adding an input changes its spec, so it goes stale and needs re-approval. Connect anyway?`)) return;
-    if (dirty && sel === to) { toast("Save or discard your edits to that box first.", true); return; }
-    try { const r = await api("/api/connect", { from: d.from, to }); toast(`Connected → ${ts.spec.title}.${r.name}`); await load(); select(to, "contract"); } catch (e) { toast(e.message, true); }
+    const t = targetAt(ev); render(); if (tool === "arrow") setTool("select");
+    const moved = Math.hypot(d.b.x - d.a.x, d.b.y - d.a.y) > 30;
+    if (!t && d.kind === "box" && moved && ev.target.closest("#stage")) return quickAdd(ev.clientX, ev.clientY, d.out ? { from: `${d.id}.${d.out}` } : { box: d.id });
+    if (!t || (t.kind === d.kind && t.id === d.id)) return;
+    if (d.out && t.kind === "box") { const dst = byId(t.id); if (LOCKED.includes(dst.status) && !confirm(`“${dst.spec.title}” is verified. Adding an arrow changes it, so it will need re-checking. Continue?`)) return;
+      try { await api("/api/connect", { from: `${d.id}.${d.out}`, to: t.id }); await load(true); toast(`Connected ${d.out} → ${dst.spec.title}`); } catch (e) { toast(e.message, true); } return; }
+    if (d.kind === "note" || t.kind === "note") { const nid = d.kind === "note" ? d.id : t.id, other = d.kind === "note" ? t.id : d.id, n = noteById(nid);
+      try { await api("/api/note", { id: nid, links: [...new Set([...(n.links || []), other])] }); await load(true); } catch (e) { toast(e.message, true); } return; }
+    connectBoxes(d.id, t.id, ev);
   }
 });
-$("stage").addEventListener("dblclick", async ev => {
-  if (ev.target.closest(".node") || ev.target.closest(".hud")) return;
-  const w = toWorld(ev); await createBox(w.x - W / 2, w.y - 30);
+async function connectBoxes(from, to, ev) {
+  const src = byId(from), dst = byId(to), outs = src.spec.outputs || [];
+  if (LOCKED.includes(dst.status) && !confirm(`“${dst.spec.title}” is verified. Adding an arrow changes it, so it will need re-checking. Continue?`)) return;
+  window.popGo = async (body, url = "/api/connect") => { try { await api(url, body); hidePop(); await load(true); toast(`Connected ${src.spec.title} → ${dst.spec.title}`); } catch (e) { toast(e.message, true); } };
+  if (outs.length === 1) return popGo({ from: `${from}.${outs[0].name}`, to });
+  showPop(ev, `<div class="ph">What flows into ${esc(dst.spec.title)}?</div>` + outs.map(o => `<button onclick='popGo(${JSON.stringify({ from: from + "." + o.name, to })})'>${esc(o.name)} <small>${esc(o.type || "")}</small></button>`).join("")
+    + `<button onclick='popGo(${JSON.stringify({ from, to })}, "/api/depend")'>Just run after it <small>${outs.length ? "order only, no data" : `“${esc(src.spec.title)}” has no outputs yet, so this is order only`}</small></button>`);
+}
+function showPop(ev, html) { hidePop(); const p = document.createElement("div"); p.className = "pop"; p.id = "pop"; p.innerHTML = html; p.style.left = Math.min(ev.clientX, innerWidth - 240) + "px"; p.style.top = Math.min(ev.clientY, innerHeight - 260) + "px"; document.body.appendChild(p); }
+function hidePop() { $("pop")?.remove(); }
+function showEdgeMenu(ev) { const t = selEdge.k.split(":")[0]; showPop(ev, `<div class="ph">${t === "link" ? "Note link" : t === "dep" ? "Order arrow" : "Data arrow"}</div><button class="danger" onclick="removeEdge()">Remove arrow <small>or press Delete</small></button>`); }
+async function removeEdge() {
+  if (!selEdge) return; const [t, a, b] = selEdge.k.split(":");
+  try {
+    if (t === "link") { const n = noteById(a); await api("/api/note", { id: a, links: (n.links || []).filter(x => x !== b) }); }
+    else { const s = byId(a); if (LOCKED.includes(s.status) && !confirm(`“${s.spec.title}” is verified; removing its input means it needs re-checking. Continue?`)) return;
+      await api("/api/disconnect", t === "in" ? { to: a, input: b } : { to: a, dep: b }); }
+    selEdge = null; hidePop(); await load(true);
+  } catch (e) { toast(e.message, true); }
+}
+$("stage").addEventListener("dblclick", ev => {
+  const note = ev.target.closest("[data-note]"); if (note) return editNote(note.dataset.note);
+  if (ev.target.closest("[data-box]")) return;
+  quickAdd(ev.clientX, ev.clientY);
 });
-$("stage").addEventListener("wheel", ev => {
-  ev.preventDefault();
-  const r = $("stage").getBoundingClientRect();
-  if (ev.ctrlKey || ev.metaKey) zoomBy(Math.exp(-ev.deltaY * 0.01), ev.clientX - r.left, ev.clientY - r.top);
-  else { view.x -= ev.deltaX; view.y -= ev.deltaY; applyView(); }
-}, { passive: false });
-async function removeEdge(hit) {
-  const to = hit.dataset.to, ts = byId(to);
-  const what = hit.dataset.input ? `input “${hit.dataset.input}” of ${ts.spec.title}` : `dependency ${hit.dataset.dep} → ${ts.spec.title}`;
-  if (!confirm(`Remove the arrow into ${what}?` + (ts.locked_at ? "\n\nThat box is verified; it will go stale." : ""))) return;
-  try { await api("/api/disconnect", { to, input: hit.dataset.input, dep: hit.dataset.dep }); await load(); } catch (e) { toast(e.message, true); }
-}
-async function createBox(x, y) {
-  if (dirty && !confirm("Discard unsaved changes to the current box?")) return;
-  dirty = false;
-  try { const r = await api("/api/stages", { title: "Untitled box", kind: "custom", x, y }); await load(); select(r.id, "spec"); setTimeout(() => { const t = $("f-title"); t?.focus(); t?.select(); }, 50); }
-  catch (e) { toast(e.message, true); }
-}
-function addBoxCenter() { const r = $("stage").getBoundingClientRect(); createBox((r.width / 2 - view.x) / view.z - W / 2, (r.height / 2 - view.y) / view.z - 60); }
+$("stage").addEventListener("wheel", ev => { ev.preventDefault(); if (ev.ctrlKey || ev.metaKey) zoomBy(Math.exp(-ev.deltaY * 0.01), ev.clientX, ev.clientY); else { view.x -= ev.deltaX; view.y -= ev.deltaY; applyView(); } }, { passive: false });
+document.addEventListener("keydown", ev => {
+  if (ev.target.closest("input, textarea, select") || document.querySelector("dialog[open]")) return;
+  const k = ev.key.toLowerCase();
+  if (k === " ") { space = true; $("stage").classList.add("t-hand"); ev.preventDefault(); }
+  else if (ev.metaKey || ev.ctrlKey) return;
+  else if (ev.key === "Tab") { ev.preventDefault(); quickAdd(lastMouse.x, lastMouse.y); }
+  else if (k === "v") setTool("select"); else if (k === "b") setTool("box"); else if (k === "n") setTool("note"); else if (k === "a") setTool("arrow");
+  else if (ev.key === "!" || (ev.shiftKey && k === "1")) fit();
+  else if (k === "escape") { hidePop(); selNote = null; selEdge = null; setTool("select"); if (sel) closeBox(); else render(); }
+  else if (k === "backspace" || k === "delete") { if (selNote) delNote(selNote); else if (selEdge) removeEdge(); }
+});
+document.addEventListener("keyup", ev => { if (ev.key === " ") { space = false; $("stage").classList.remove("t-hand"); } });
+document.addEventListener("mousedown", ev => { if ($("pop") && !ev.target.closest(".pop")) hidePop(); }, true);
 
-/* ================= inspector ================= */
-function select(id, t) {
-  if (id === sel && !t) return;
-  if (dirty && !confirm("Discard unsaved changes to this box?")) return;
-  sel = id; dirty = false; if (t) tab = t; else if (!id) tab = "spec";
-  render(); renderInspector(true);
+async function create(kind, x, y) {
+  try {
+    if (kind === "note") { const r = await api("/api/note", { x, y, text: "", color: "yellow" }); await load(true); editNote(r.id); return; }
+    const r = await api("/api/stages", { title: "Untitled box", kind: "custom", x, y }); await load(true); openBox(r.id, "spec");
+    setTimeout(() => { const t = $("f-title"); t?.focus(); t?.select(); }, 60);
+  } catch (e) { toast(e.message, true); }
 }
-function touch() { dirty = true; $("savebar").classList.add("show"); }
+function addAtCenter(kind) { create(kind, (innerWidth / 2 - view.x) / view.z - 120, (innerHeight / 2 - view.y) / view.z - 60); }
+function editNote(id) { editingNote = id; selNote = id; render(); }
+async function saveNoteText() { const ed = $("note-ed"), id = editingNote; if (!id) return; const text = ed ? ed.value : ""; editingNote = null; try { await api("/api/note", { id, text }); await load(true); } catch (e) { toast(e.message, true); } }
+async function noteColor(c) { try { await api("/api/note", { id: selNote, color: c }); await load(true); } catch (e) { toast(e.message, true); } }
+async function delNote(id) { try { await api("/api/note_delete", { id }); selNote = null; await load(true); } catch (e) { toast(e.message, true); } }
+
+/* ===================== inspector ===================== */
+function openBox(id, t) { if (!id || !byId(id)) return; if (sel !== id) { flushSave(); tab = t || "spec"; } else if (t) tab = t; sel = id; $("insp").classList.add("show"); render(); renderInspector(true); }
+function closeBox() { flushSave(); sel = null; $("insp").classList.remove("show"); render(); }
+function ro() { return LOCKED.includes(byId(sel).status); }
 function renderInspector(reset) {
-  const st = sel && byId(sel);
-  if (st && reset) { draft = clone(st.spec); draft.decisions = clone(st.decisions); for (const k of ["inputs", "outputs", "constraints", "tests", "invariants"]) draft[k] = draft[k] || []; dirty = false; }
-  $("savebar").classList.toggle("show", dirty);
-  renderHead(); renderGate(); renderTabs(); renderTab();
+  const st = byId(sel); if (!st) return;
+  if (reset) { draft = clone(st.spec); draft.decisions = clone(st.decisions); for (const k of ["inputs", "outputs", "constraints", "tests", "invariants"]) draft[k] = draft[k] || []; }
+  renderHead(true); renderNext(); renderTabs(); renderTab();
 }
-function renderHead() {
-  const st = sel && byId(sel);
-  if (!st) { $("ihead").innerHTML = `<div class="ihead"><div class="row1"><span class="kchip">pipeline</span></div><h1>${esc(S.pipeline.name || "pipeline")}</h1></div>`; return; }
-  $("ihead").innerHTML = `<div class="ihead"><div class="row1"><span class="kchip">${esc(st.spec.kind || "custom")}</span><span class="sid">${esc(st.id)}</span><span style="flex:1"></span><button class="ghost sm" onclick="select(null)">✕</button></div>
-    <h1>${esc(st.spec.title || st.id)}</h1></div>`;
+function renderHead(full) {
+  const st = byId(sel), m = ST[st.status];
+  if (!full && $("f-title")) { const p = $("ih").querySelector(".pillst"); if (p) { p.style.setProperty("--c", m.c); p.textContent = m.label; } return; }
+  $("ih").innerHTML = `<div class="r1"><span class="pillst" style="--c:${m.c}">${m.label}</span>
+    <select class="kind" id="f-kind" ${ro() ? "disabled" : ""} title="Kind adds required questions">${Object.keys(S.kinds).map(k => `<option ${k === (draft.kind || "custom") ? "selected" : ""}>${k}</option>`).join("")}</select>
+    <span class="spacer"></span><span class="saved" id="saved"></span>
+    <button class="quiet sm" onclick="boxMenu(event)" title="More">•••</button><button class="quiet sm" onclick="closeBox()" title="Close (Esc)">✕</button></div>
+    <input class="title" id="f-title" value="${esc(draft.title)}" ${ro() ? "disabled" : ""} placeholder="Name this step">`;
+  $("f-title").addEventListener("input", e => { draft.title = e.target.value; touch(); });
+  $("f-kind").addEventListener("change", e => { draft.kind = e.target.value; touch(true); });
 }
-function renderGate() {
-  const st = sel && byId(sel);
-  if (!st) { $("gate").innerHTML = ""; return; }
-  const m = STATUS[st.status], depsOk = st.deps.every(d => byId(d)?.status === "verified");
-  let h = `<div class="gate" style="--c:${m.c}"><div class="gt">${m.label}</div><p>${m.explain}</p>`;
-  if (st.reasons.length && st.status !== "verified") h += `<ul>${st.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>`;
-  const acts = [];
-  if (st.status === "ready") acts.push(`<button class="pink" ${dirty ? "disabled" : ""} onclick="act('approve')">Approve spec</button>`);
-  if (["approved", "failing", "stale", "verified"].includes(st.status)) acts.push(`<button class="mint" ${depsOk && st.files_exist.length ? "" : "disabled"} onclick="act('verify')">Run checks</button>`);
-  if (st.status === "blocked") acts.push(`<button class="dark" onclick="act('retry')">Give ${S.policy.max_attempts} more attempts</button>`);
-  if (st.locked_at && st.status !== "archived") acts.push(`<button class="danger" onclick="act('unlock')">Unlock</button>`);
-  if (st.status === "archived") acts.push(`<button onclick="boxAct('restore')">Restore</button>`);
-  if (acts.length) h += `<div class="acts">${acts.join("")}</div>`;
-  if (["approved", "failing"].includes(st.status) && !st.files_exist.length) h += `<p class="help" style="margin-top:8px">Waiting for the agent: run <code>/arx-build</code> in Claude Code.</p>`;
-  if (!depsOk && st.deps.length && !["draft", "ready", "archived"].includes(st.status)) h += `<p class="help" style="margin-top:8px">Upstream must be verified first: ${st.deps.map(esc).join(", ")}</p>`;
-  if (["failing", "blocked", "stale", "tampered"].includes(st.status)) h += `<div class="nextopts">
-      <button onclick="tab='spec';renderTabs();renderTab();setTimeout(()=>$('f-approach')?.focus(),30)">Revise this box<span>Change the approach, decisions or checks, then re-approve.</span></button>
-      <button onclick="boxAct('insert_before')">＋ Insert a box before<span>Add an upstream step; inputs are rewired through it.</span></button>
-      <button onclick="boxAct('variant')">⑂ Try an alternative approach<span>Same contract and checks, your new method. Keep whichever passes.</span></button>
-      <button onclick="tab='try';renderTabs();renderTab()">▶ Try it yourself<span>Run this box on your own input and inspect the output.</span></button></div>`;
-  $("gate").innerHTML = h + `</div>`;
+function issueTarget(i) {
+  if (/^purpose/.test(i)) return ["spec", "f-purpose"]; if (/^approach/.test(i)) return ["spec", "f-approach"];
+  const m = i.match(/^unanswered \[([^\]]+)\]/); if (m) return ["spec", "dec-" + m[1]];
+  if (/^constraints/.test(i)) return ["spec", "f-con"]; if (/^(output|input|reads|depends)/.test(i)) return ["contract", null];
+  if (/^(tests|test |invariant)/.test(i)) return ["checks", null]; return ["spec", null];
+}
+function prettyIssue(i) { return i.replace(/^unanswered \[[^\]]*\] /, "Answer: ").replace(/\s+\(asked by [^)]*\)$/, "").replace(/^approach: .*/, "Write the approach: how exactly it's done").replace(/^purpose: .*/, "Write the purpose").replace(/^constraints: need at least (\d+)/, "Add at least $1 constraint").replace(/^tests: need at least (\d+).*/, "Add at least $1 test case").replace(/^invariants: need at least (\d+).*/, "Add at least $1 invariant").replace(/^outputs: .*/, "Declare an output (Contract)"); }
+function jump(k) { const [t, f] = issueTarget(byId(sel).issues[k]); tab = t; renderTabs(); renderTab(); setTimeout(() => { const el = f && $(f); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.focus(); } }, 40); }
+function renderNext() {
+  const st = byId(sel), m = ST[st.status], depsOk = st.deps.every(d => byId(d)?.status === "verified");
+  const mine = AG.sid === sel && (AG.running || (AG.events || []).length);
+  let h = `<div class="next" style="--c:${m.c}"><h4>${m.h}</h4><p>${m.p}</p>`;
+  const B = [];
+  if (st.status === "draft") h += `<ul class="todo">${st.issues.map((i, k) => `<li onclick="jump(${k})">${esc(prettyIssue(i))}</li>`).join("")}</ul>`;
+  if (st.status === "ready") B.push(`<button class="pink" onclick="approve(true)">Approve & build</button>`, `<button onclick="approve(false)">Approve only</button>`);
+  if (["approved", "failing"].includes(st.status)) {
+    if (AG.running && AG.sid === sel) B.push(`<button onclick="stopAgent()">Stop</button>`);
+    else {
+      const verb = st.status === "failing" ? "Fix" : "Build", def = S.policy.agent, list = ["claude", "codex"];
+      if (!list.includes(def)) list.unshift(def);
+      for (const a of list) { const have = S.agents?.[a] ?? true;
+        B.push(`<button class="${a === def ? "pink" : ""}" ${depsOk && !AG.running && have ? "" : "disabled"} title="${have ? "" : `${AGENT_LABEL(a)} isn't installed or on PATH`}" onclick="build('${esc(a)}')">${verb} with ${AGENT_LABEL(a)}</button>`); }
+    }
+    if (st.files_exist.length) B.push(`<button onclick="act('verify')">Run checks</button>`);
+  }
+  if (st.status === "verified") B.push(`<button onclick="act('verify')">Re-run checks</button>`, `<button class="quiet" onclick="act('unlock')">Unlock to edit</button>`);
+  if (st.status === "stale") B.push(`<button class="pink" onclick="act('verify')">Re-run checks</button>`, `<button class="quiet" onclick="act('unlock')">Unlock</button>`);
+  if (st.status === "tampered") B.push(`<button onclick="act('unlock')">Unlock</button>`);
+  if (st.status === "archived") B.push(`<button onclick="boxAct('restore')">Restore</button>`);
+  if (B.length) h += `<div class="acts">${B.join("")}</div>`;
+  if (["approved", "failing"].includes(st.status) && !depsOk) h += `<p class="hint" style="margin:8px 0 0">Verify the upstream box first: ${st.deps.map(esc).join(", ")}</p>`;
+  if (["failing", "blocked"].includes(st.status)) h += `<div class="opts">${st.status === "blocked" ? `<button onclick="act('retry')">Give it ${S.policy.max_attempts} more attempts<small>Same spec. For failures that look like bugs.</small></button>` : ""}
+    <button onclick="tab='spec';renderTabs();renderTab()">Revise this box<small>Change the approach, decisions or checks.</small></button>
+    <button onclick="boxAct('insert_before')">Insert a box before<small>Add an upstream step.</small></button>
+    <button onclick="boxAct('variant')">Try an alternative<small>Same contract and checks, your new method.</small></button></div>`;
+  if (mine) h += `<div class="log" id="log">${AG.events.map(e => `<div class="ev"><span>${e.t}s</span><span class="${e.kind}">${esc(e.msg)}</span></div>`).join("")}</div>`;
+  $("next").innerHTML = h + `</div>`;
+  const lg = $("log"); if (lg) lg.scrollTop = lg.scrollHeight;
 }
 function renderTabs() {
-  const st = sel && byId(sel);
-  if (!st) { $("tabs").innerHTML = ""; return; }
-  const n = k => (st.issues || []).filter(i => k(i)).length;
-  const specN = n(i => /^(purpose|approach|constraints|unanswered)/.test(i)), conN = n(i => /^(output|input|outputs|reads|depends)/.test(i)), chkN = n(i => /^(tests|invariants|test |invariant )/.test(i));
-  const b = x => x ? `<span class="badge">${x}</span>` : "";
-  $("tabs").innerHTML = [["spec", "Spec" + b(specN)], ["contract", "Contract" + b(conN)], ["checks", "Checks" + b(chkN)], ["try", "Try it"], ["box", "Box"]]
-    .map(([k, l]) => `<button class="${tab === k ? "on" : ""}" onclick="tab='${k}';renderTabs();renderTab()">${l}</button>`).join("");
+  const st = byId(sel), n = f => st.issues.filter(f).length;
+  const c = { spec: n(i => /^(purpose|approach|constraints|unanswered)/.test(i)), contract: n(i => /^(output|input|reads|depends)/.test(i)), checks: n(i => /^(tests|invariant|test )/.test(i)) };
+  $("tabs").innerHTML = [["spec", "Spec"], ["contract", "Contract"], ["checks", "Checks"], ["try", "Try it"]].map(([k, l]) => `<button class="${tab === k ? "on" : ""}" onclick="tab='${k}';renderTabs();renderTab()">${l}${c[k] ? `<span class="n">${c[k]}</span>` : ""}</button>`).join("");
 }
-function renderTab() {
-  const st = sel && byId(sel);
-  if (!st) return renderOverview();
-  ({ spec: tabSpec, contract: tabContract, checks: tabChecks, try: tabTry, box: tabBox })[tab](st);
-  wire();
-}
-function missing(prefix) { return (byId(sel)?.issues || []).some(i => i.startsWith(prefix)); }
+function renderTab() { const st = byId(sel); ({ spec: tabSpec, contract: tabContract, checks: tabChecks, try: tabTry })[tab](st); wire(); if (ro()) $("ib").querySelectorAll("input,textarea,select,.x,.mk").forEach(e => { if (!e.closest(".tryzone")) e.disabled = true; }); }
+function missing(p) { return byId(sel).issues.some(i => i.startsWith(p)); }
+const lockNote = () => ro() ? `<div class="locked">🔒 ${byId(sel).status === "archived" ? "Archived." : "Verified boxes are locked."} Unlock to edit the spec.</div>` : "";
 
-/* ---------- overview ---------- */
-function renderOverview() {
-  const act = S.stages.filter(s => s.status !== "archived");
-  let h = `<div class="sec"><label>Pipeline name</label><input id="pv-name" value="${esc(S.pipeline.name || "")}"><label>Description</label><textarea id="pv-desc">${esc(S.pipeline.description || "")}</textarea>
-    <div style="margin-top:8px"><button class="sm" onclick="savePipeline()">Save</button></div></div>`;
-  h += `<div class="sec overview"><h3>Boxes</h3>${act.length ? act.map(s => `<div class="st" style="--c:${STATUS[s.status].c}" onclick="select('${s.id}')"><span class="d"></span><div><div class="t">${esc(s.spec.title || s.id)} <span class="kchip">${STATUS[s.status].label}</span></div><div class="r">${esc(s.status === "verified" ? "locked, checks pass" : (s.reasons[0] || ""))}</div></div></div>`).join("") : `<p class="muted">No boxes yet.</p>`}</div>`;
-  h += `<div class="sec"><h3>How it works</h3><ol class="help" style="padding-left:18px;line-height:1.8">
-    <li><b>Add boxes</b>: double-click the canvas. You decide every step.</li>
-    <li><b>Connect</b> by dragging an output <b style="color:var(--teal)">●</b> onto another box.</li>
-    <li><b>Specify</b> each box: approach, decisions, a typed contract, tests.</li>
-    <li><b>Approve</b>. The agent implements exactly that (<code>/arx-build</code>).</li>
-    <li><b>Checks pass</b> → the box locks. Failures come back to you.</li>
-    <li><b>Try it</b>: run any box on your own input and inspect the output.</li></ol></div>`;
-  $("ibody").innerHTML = h;
+/* ---- autosave ---- */
+function touch(now) { if ($("saved")) $("saved").textContent = "Editing…"; clearTimeout(saveT); saveT = setTimeout(save, now ? 10 : 700); }
+function flushSave() { if (saveT) { clearTimeout(saveT); save(); } }
+async function save() {
+  saveT = null; if (!sel || !draft || ro()) return; const id = sel, body = clone(draft); delete body.ui; saving = true;
+  const kindChanged = byId(id)?.spec.kind !== body.kind;
+  try { await api(`/api/stage/${id}`, body); saving = false; if ($("saved")) $("saved").textContent = "Saved ✓"; await load(true); if (kindChanged && sel === id) renderInspector(true); }
+  catch (e) { saving = false; toast(e.message, true); if ($("saved")) $("saved").textContent = "Not saved"; }
 }
-async function savePipeline() { try { await api("/api/pipeline", { name: $("pv-name").value, description: $("pv-desc").value }); toast("Saved"); await load(); } catch (e) { toast(e.message, true); } }
 
-/* ---------- spec tab ---------- */
+/* ---- spec tab ---- */
 function tabSpec(st) {
-  const kinds = Object.keys(S.kinds);
-  let h = `<div class="sec ${missing("purpose") || missing("approach") ? "missing" : ""}">
-    <div class="grid2"><div><label>Title</label><input id="f-title" value="${esc(draft.title)}"></div>
-    <div><label>Kind <span class="muted">· adds required questions</span></label><select id="f-kind">${kinds.map(k => `<option ${k === (draft.kind || "custom") ? "selected" : ""}>${k}</option>`).join("")}</select></div></div>
-    <label>Purpose</label><textarea id="f-purpose" class="${missing("purpose") ? "miss" : ""}" placeholder="What is this box for?">${esc(draft.purpose)}</textarea>
-    <label>Approach: your method, implemented literally</label><textarea id="f-approach" class="big ${missing("approach") ? "miss" : ""}" placeholder="Exactly how this step must be done.">${esc(draft.approach)}</textarea></div>`;
-  const openD = draft.decisions.filter(isOpen).length;
-  h += `<div class="sec ${openD ? "missing" : ""}"><h3>Decisions <span class="h">${openD ? `${openD} unanswered, the agent won't guess` : "all answered"}</span></h3><p class="help">Keyed answers reach the code as <span class="key">params[key]</span>.</p>`;
-  draft.decisions.forEach((d, i) => {
-    const o = isOpen(d);
-    const by = d.asked_by === "agent" ? `<span class="tag agent">agent asks</span>` : d.asked_by === "arx" ? `<span class="tag req">required</span>` : "";
-    const ans = String(d.answered_by || "").startsWith("agent") ? `<span class="tag agent">relayed by agent</span>` : "";
-    h += `<div class="card ${o ? "open" : ""}"><div class="ch"><b style="flex:1;font-size:13px">${esc(d.question)}</b>${by}${ans}${d.asked_by === "arx" ? "" : `<button class="x" onclick="rm('decisions',${i})">×</button>`}</div>
-      ${d.key ? `<div class="key" style="margin-top:2px">params.${esc(d.key)}</div>` : ""}${d.why ? `<div class="help">${esc(d.why)}</div>` : ""}
-      <input style="margin-top:6px" class="${o ? "miss" : ""}" data-l="decisions" data-i="${i}" data-k="answer" value="${esc(o ? "" : (typeof d.answer === "object" ? JSON.stringify(d.answer) : d.answer))}" placeholder="your answer">
-      ${(d.options || []).length ? `<div class="chips">${d.options.map(x => `<button class="chip" onclick='pick(${i}, ${JSON.stringify(String(x))})'>${esc(x)}</button>`).join("")}</div>` : ""}</div>`;
-  });
-  h += `<div class="grid3" style="grid-template-columns:2fr 1fr auto"><input id="nq" placeholder="add a decision / question"><input id="nk" class="mono" placeholder="param key"><button class="sm" onclick="addQ()">Add</button></div></div>`;
-  h += `<div class="sec ${missing("constraints") ? "missing" : ""}"><h3>Constraints <span class="h">rules the code must respect</span></h3>`;
-  draft.constraints.forEach((c, i) => h += `<div style="display:flex;gap:6px;margin-bottom:6px"><input data-l="constraints" data-i="${i}" value="${esc(c)}"><button class="x" onclick="rm('constraints',${i})">×</button></div>`);
-  h += `<button class="sm" onclick="addRow('constraints','')">＋ constraint</button></div>`;
-  $("ibody").innerHTML = h;
-  bind("f-title", v => draft.title = v); bind("f-purpose", v => draft.purpose = v); bind("f-approach", v => draft.approach = v);
-  $("f-kind").addEventListener("change", e => { draft.kind = e.target.value; touch(); toast("Save to load this kind's required questions."); });
+  const ok = c => c ? "ok" : "miss", openD = draft.decisions.filter(isOpen).length;
+  let h = lockNote() + `
+  <div class="step ${ok(!missing("purpose"))}"><span class="num">1</span><div><h3>Purpose</h3><p class="hint">One sentence: what this box produces, and why the pipeline needs it.</p>
+    <textarea id="f-purpose" rows="2" placeholder="Turn raw survey CSVs into one clean table of responses.">${esc(draft.purpose)}</textarea></div></div>
+  <div class="step ${ok(!missing("approach"))}"><span class="num">2</span><div><h3>Approach</h3><p class="hint">Your method, precise enough that two people would write the same code: libraries, parameters, order of steps, edge cases. The agent implements it literally.</p>
+    <textarea id="f-approach" class="big" placeholder="1. Load with pandas (dtype=str).&#10;2. Drop rows where consent != 'yes'.&#10;3. Normalize free text: NFKC, lowercase, collapse whitespace.&#10;4. Deduplicate on respondent_id, keep the latest timestamp.">${esc(draft.approach)}</textarea></div></div>
+  <div class="step ${ok(!openD)}"><span class="num">3</span><div><h3>Decisions</h3><p class="hint">Choices the code must not make on its own. Each keyed answer reaches the code as <code>params["key"]</code>, so changing it here changes the run. The box's kind adds required ones.</p>`;
+  draft.decisions.forEach((d, i) => { const o = isOpen(d);
+    h += `<div class="item ${o ? "open" : ""}"><div class="r"><b style="flex:1;font-size:13px">${esc(d.question)}</b>${d.asked_by === "agent" ? `<span class="tag a">agent asks</span>` : d.asked_by === "arx" ? `<span class="tag q">required</span>` : ""}${String(d.answered_by || "").startsWith("agent") ? `<span class="tag a">relayed</span>` : ""}${d.asked_by === "arx" ? "" : `<button class="x" onclick="rm('decisions',${i})">×</button>`}</div>
+      ${d.key ? `<div class="key">params["${esc(d.key)}"]</div>` : ""}${d.why ? `<div class="hint">${esc(d.why)}</div>` : ""}
+      <input id="dec-${esc(d.key || i)}" style="margin-top:6px" data-l="decisions" data-i="${i}" data-k="answer" value="${esc(o ? "" : (typeof d.answer === "object" ? JSON.stringify(d.answer) : d.answer))}" placeholder="Your answer">
+      ${(d.options || []).length ? `<div class="chips">${d.options.map(x => `<button class="chip mk" onclick='pick(${i}, ${JSON.stringify(String(x))})'>${esc(x)}</button>`).join("")}</div>` : ""}</div>`; });
+  h += `<div class="g3" style="grid-template-columns:2fr 1fr auto"><input id="nq" placeholder="Add your own decision…"><input id="nk" class="mono" placeholder="key"><button class="sm add mk" onclick="addQ()">Add</button></div></div></div>
+  <div class="step ${ok(!missing("constraints"))}"><span class="num">4</span><div><h3>Constraints</h3><p class="hint">Rules the code must follow that are hard to test automatically, like <i>no network access</i> or <i>keep the input order</i>. The agent must obey them. If a rule <b>can</b> be checked on the output, use <b>→ check</b> to turn it into an invariant.</p>`;
+  draft.constraints.forEach((c, i) => h += `<div style="display:flex;gap:6px;margin-bottom:6px"><input ${i === 0 ? `id="f-con"` : ""} data-l="constraints" data-i="${i}" value="${esc(c)}" placeholder="e.g. never drop rows silently"><button class="sm quiet mk" title="Make it an automatic check" onclick="toInvariant(${i})">→ check</button><button class="x" onclick="rm('constraints',${i})">×</button></div>`);
+  h += `<button class="sm add mk" ${draft.constraints.length ? "" : `id="f-con"`} onclick="addRow('constraints','')">＋ Constraint</button></div></div>
+  <details class="explain"><summary>How this box gets enforced</summary><ol>
+    <li><b>Spec</b> (this tab): the agent can't write code for the box until every item is filled in and you approve it.</li>
+    <li><b>Contract</b>: types, columns, dtypes and shapes are checked on every run.</li>
+    <li><b>Tests</b>: your hand-made input must produce your expected output.</li>
+    <li><b>Invariants</b>: properties that must hold on the real data.</li>
+    <li>All pass → the code <b>locks</b>. ${S.policy.max_attempts} failed runs → it comes back to you.</li></ol></details>`;
+  $("ib").innerHTML = h;
+  bindF("f-purpose", v => draft.purpose = v); bindF("f-approach", v => draft.approach = v);
 }
-function bind(id, fn) { const el = $(id); el?.addEventListener("input", () => { fn(el.value); touch(); }); }
-function rm(k, i) { draft[k].splice(i, 1); touch(); renderTab(); }
-function addRow(k, blank) { draft[k].push(clone(blank)); touch(); renderTab(); }
-function pick(i, v) { draft.decisions[i].answer = v; draft.decisions[i].answered_by = "researcher"; touch(); renderTab(); }
-function addQ() { const q = $("nq").value.trim(); if (!q) return; const d = { question: q, answer: null, asked_by: "researcher" }; const k = $("nk").value.trim(); if (k) d.key = k; draft.decisions.push(d); touch(); renderTab(); }
+function bindF(id, fn) { const el = $(id); el?.addEventListener("input", () => { fn(el.value); touch(); }); }
+function rm(k, i) { draft[k].splice(i, 1); touch(true); renderTab(); }
+function addRow(k, blank) { draft[k].push(clone(blank)); renderTab(); setTimeout(() => { const els = $("ib").querySelectorAll(`[data-l="${k}"]`); els[els.length - 1]?.focus(); }, 20); }
+function pick(i, v) { draft.decisions[i].answer = v; draft.decisions[i].answered_by = "researcher"; touch(true); renderTab(); }
+function addQ() { const q = $("nq").value.trim(); if (!q) return; const d = { question: q, answer: null, asked_by: "researcher" }; const k = $("nk").value.trim(); if (k) d.key = k; draft.decisions.push(d); touch(true); renderTab(); }
+function toInvariant(i) { const c = draft.constraints[i]; draft.constraints.splice(i, 1); draft.invariants.push({ name: c, expr: "" }); touch(true); tab = "checks"; renderTabs(); renderTab(); toast("Moved to Checks. Write the expression that verifies it."); }
 
-/* ---------- contract tab ---------- */
+/* ---- contract tab ---- */
 const splitType = t => { const m = String(t || "").match(/^(\w+)\s*(?:\[(.*)\])?$/); return m ? [m[1].toLowerCase(), (m[2] || "").trim()] : [String(t || ""), ""]; };
 const opt = (list, v) => { const l = list.includes(v) || !v ? list : [...list, v]; return l.map(x => `<option ${x === v ? "selected" : ""}>${esc(x)}</option>`).join(""); };
 function portEditor(kind, p, i) {
   const [base, inner] = splitType(p.type), sc = p.schema || {};
   const f = (k, ph, cls = "") => `<input class="${cls}" data-p="${kind}" data-i="${i}" data-s="${k}" value="${esc(sc[k] ?? "")}" placeholder="${esc(ph)}">`;
-  const cb = (k, label) => `<label class="chk"><input type="checkbox" data-p="${kind}" data-i="${i}" data-s="${k}" ${sc[k] ? "checked" : ""}> ${label}</label>`;
-  let h = `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-p="${kind}" data-i="${i}" data-f="name" value="${esc(p.name)}" placeholder="name">
-    <select style="width:130px" data-p="${kind}" data-i="${i}" data-f="base">${opt(S.port_types, base)}</select>
-    ${["list", "tuple"].includes(base) ? `<select style="width:90px" data-p="${kind}" data-i="${i}" data-f="item">${opt(["", "str", "int", "float", "bool", "dict", "list", "any"], inner)}</select>` : ""}
+  const cb = (k, l) => `<label class="chk"><input type="checkbox" data-p="${kind}" data-i="${i}" data-s="${k}" ${sc[k] ? "checked" : ""}> ${l}</label>`;
+  let h = `<div class="item"><div class="r"><input style="flex:1;font-weight:700" data-p="${kind}" data-i="${i}" data-f="name" value="${esc(p.name)}" placeholder="name">
+    <select style="width:120px" data-p="${kind}" data-i="${i}" data-f="base">${opt(S.port_types, base)}</select>
+    ${["list", "tuple"].includes(base) ? `<select style="width:86px" data-p="${kind}" data-i="${i}" data-f="item">${opt(["", "str", "int", "float", "bool", "dict", "list", "any"], inner)}</select>` : ""}
     <button class="x" onclick="rmPort('${kind}',${i})">×</button></div>`;
-  if (kind === "inputs") h += `<label>From</label><select data-p="${kind}" data-i="${i}" data-f="from">${opt(upstreamOutputs(), p.from || "")}</select>`;
+  if (kind === "inputs") h += `<label>Comes from</label><select data-p="${kind}" data-i="${i}" data-f="from">${opt(upstreamOutputs(), p.from || "")}</select>`;
   h += `<label>Description</label><input data-p="${kind}" data-i="${i}" data-f="description" value="${esc(p.description || "")}" placeholder="what it is, units, ordering…">`;
   if (base === "dataframe") {
-    const cols = sc.columns || [];
-    h += `<label>Columns</label><div class="coltable"><span class="hd">name</span><span class="hd">dtype</span><span class="hd">nulls ok</span><span class="hd">unique</span><span></span>
-      ${cols.map((c, j) => `<input class="mono" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="name" value="${esc(c.name || "")}"><select data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="dtype">${opt(S.dtypes, c.dtype || "any")}</select>
-        <input type="checkbox" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="nullable" ${c.nullable !== false ? "checked" : ""}><input type="checkbox" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="unique" ${c.unique ? "checked" : ""}>
-        <button class="x" onclick="rmCol('${kind}',${i},${j})">×</button>`).join("")}</div>
-      <button class="sm" style="margin-top:6px" onclick="addCol('${kind}',${i})">＋ column</button>
-      <div class="grid3"><div><label>Rows (n or number)</label>${f("rows", "n", "mono")}</div><div><label>Min rows</label>${f("min_rows", "")}</div><div><label>Max rows</label>${f("max_rows", "")}</div></div>
-      <div style="margin-top:8px">${cb("exact_columns", "No extra columns allowed")}</div>`;
+    h += `<label>Columns</label><div class="cols"><span class="hd">name</span><span class="hd">dtype</span><span class="hd">nulls</span><span class="hd">unique</span><span></span>
+      ${(sc.columns || []).map((c, j) => `<input class="mono" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="name" value="${esc(c.name || "")}"><select data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="dtype">${opt(S.dtypes, c.dtype || "any")}</select>
+      <input type="checkbox" title="nulls allowed" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="nullable" ${c.nullable !== false ? "checked" : ""}><input type="checkbox" title="unique" data-p="${kind}" data-i="${i}" data-c="${j}" data-ck="unique" ${c.unique ? "checked" : ""}><button class="x" onclick="rmCol('${kind}',${i},${j})">×</button>`).join("")}</div>
+      <button class="sm add mk" style="margin-top:6px" onclick="addCol('${kind}',${i})">＋ Column</button>
+      <div class="g3"><div><label>Rows</label>${f("rows", "n", "mono")}</div><div><label>Min rows</label>${f("min_rows", "")}</div><div><label>Max rows</label>${f("max_rows", "")}</div></div>
+      <div style="margin-top:8px">${cb("exact_columns", "No other columns allowed")}</div>`;
   } else if (base === "ndarray") {
     const shape = Array.isArray(sc.shape) ? "[" + sc.shape.join(", ") + "]" : (sc.shape || "");
-    h += `<div class="grid2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div>
-      <div><label>Shape <span class="muted">· ints, * or symbols</span></label><input class="mono" data-p="${kind}" data-i="${i}" data-s="shape" value="${esc(shape)}" placeholder="[n, 384]"></div></div>
-      <div class="grid3"><div><label>Min value</label>${f("min", "")}</div><div><label>Max value</label>${f("max", "")}</div><div style="padding-top:30px">${cb("finite", "finite only")}</div></div>`;
+    h += `<div class="g2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div>
+      <div><label>Shape</label><input class="mono" data-p="${kind}" data-i="${i}" data-s="shape" value="${esc(shape)}" placeholder="[n, 384]"></div></div>
+      <div class="g3"><div><label>Min value</label>${f("min", "")}</div><div><label>Max value</label>${f("max", "")}</div><div style="padding-top:32px">${cb("finite", "finite")}</div></div>`;
   } else if (["list", "tuple"].includes(base)) {
-    h += `<div class="grid3"><div><label>Length (n or number)</label>${f("length", "n", "mono")}</div><div><label>Min len</label>${f("min_len", "")}</div><div><label>Max len</label>${f("max_len", "")}</div></div>
+    h += `<div class="g3"><div><label>Length</label>${f("length", "n", "mono")}</div><div><label>Min len</label>${f("min_len", "")}</div><div><label>Max len</label>${f("max_len", "")}</div></div>
       <div style="display:flex;gap:14px;margin-top:8px">${cb("unique", "unique items")}${cb("nonempty_items", "no empty items")}</div>`;
   } else if (base === "series") {
-    h += `<div class="grid2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div><div><label>Length (n)</label>${f("rows", "n", "mono")}</div></div>
-      <div style="display:flex;gap:14px;margin-top:8px">${cb("unique", "unique")}</div>`;
+    h += `<div class="g2"><div><label>dtype</label><select data-p="${kind}" data-i="${i}" data-s="dtype">${opt(["", ...S.dtypes], sc.dtype || "")}</select></div><div><label>Length</label>${f("rows", "n", "mono")}</div></div><div style="margin-top:8px">${cb("unique", "unique")}</div>`;
   } else if (base === "dict") {
     h += `<label>Required keys</label><input class="mono" data-p="${kind}" data-i="${i}" data-s="keys" value="${esc(Array.isArray(sc.keys) ? sc.keys.join(", ") : (sc.keys || ""))}" placeholder="k1, k2">`;
   } else if (["int", "float"].includes(base)) {
-    h += `<div class="grid2"><div><label>Min</label>${f("min", "")}</div><div><label>Max</label>${f("max", "")}</div></div>`;
+    h += `<div class="g2"><div><label>Min</label>${f("min", "")}</div><div><label>Max</label>${f("max", "")}</div></div>`;
   }
   return h + `</div>`;
 }
 function tabContract(st) {
-  let h = `<p class="help">The contract is checked on every test and every real run: types, columns, dtypes, shapes. Symbols like <span class="key">n</span> must agree across all of this box's inputs and outputs.</p>`;
-  h += `<div class="sec ${missing("input") || missing("reads") ? "missing" : ""}"><h3>Inputs <span class="h">arrows in</span></h3>${draft.inputs.map((p, i) => portEditor("inputs", p, i)).join("") || `<p class="muted">None. Drag an output ● from another box onto this one, or add one manually.</p>`}
-    <button class="sm" onclick="addPort('inputs')">＋ input</button></div>`;
-  h += `<div class="sec ${missing("output") ? "missing" : ""}"><h3>Outputs <span class="h">arrows out</span></h3>${draft.outputs.map((p, i) => portEditor("outputs", p, i)).join("") || `<p class="muted">Declare at least one output.</p>`}
-    <button class="sm" onclick="addPort('outputs')">＋ output</button></div>`;
-  $("ibody").innerHTML = h;
+  $("ib").innerHTML = lockNote() + `<details class="explain"><summary>What a contract does</summary><ol>
+    <li>Every arrow carries a typed value. arx checks it on <b>every</b> run, before your tests.</li>
+    <li>Dataframes: list the columns, dtypes, and whether nulls or duplicates are allowed.</li>
+    <li>Arrays: dtype and shape. Use <code>*</code> for "any size".</li>
+    <li>Use a symbol like <code>n</code> to say "same size": rows = <code>n</code> and shape <code>[n, *]</code> must match.</li></ol></details>
+  <div class="sec"><h3>Inputs</h3><p class="hint">What flows in. Draw an arrow from another box, or add one here.</p>${draft.inputs.map((p, i) => portEditor("inputs", p, i)).join("")}<button class="sm add mk" onclick="addPort('inputs')">＋ Input</button></div>
+  <div class="sec"><h3>Outputs</h3><p class="hint">What this box must return. Other boxes can connect to these.</p>${draft.outputs.map((p, i) => portEditor("outputs", p, i)).join("")}<button class="sm add mk" onclick="addPort('outputs')">＋ Output</button></div>
+  <details class="sec"><summary class="hint" style="cursor:pointer">Advanced: files owned by this box</summary><input id="f-files" class="mono" style="margin-top:6px" value="${esc((draft.files || st.files).join(", "))}"><p class="hint">Verified and locked together.</p></details>`;
+  bindF("f-files", v => draft.files = v.split(",").map(x => x.trim()).filter(Boolean));
 }
-function upstreamOutputs() { const o = [""]; for (const s of S.stages) if (s.id !== sel && s.status !== "archived") for (const x of s.spec.outputs || []) o.push(`${s.id}.${x.name}`); return o; }
-function addPort(k) { draft[k].push(k === "outputs" ? { name: "", type: "dataframe", description: "", schema: { columns: [] } } : { name: "", from: "", type: "any" }); touch(); renderTab(); }
-function rmPort(k, i) { draft[k].splice(i, 1); touch(); renderTab(); }
-function addCol(k, i) { const p = draft[k][i]; p.schema = p.schema || {}; (p.schema.columns ||= []).push({ name: "", dtype: "str", nullable: false }); touch(); renderTab(); }
-function rmCol(k, i, j) { draft[k][i].schema.columns.splice(j, 1); touch(); renderTab(); }
-
-/* generic field wiring for the current tab */
+function upstreamOutputs() { const o = [""]; for (const s of shown()) if (s.id !== sel) for (const x of s.spec.outputs || []) o.push(`${s.id}.${x.name}`); return o; }
+function addPort(k) { draft[k].push(k === "outputs" ? { name: "", type: "dataframe", description: "", schema: { columns: [] } } : { name: "", from: "", type: "any" }); touch(true); renderTab(); }
+function rmPort(k, i) { draft[k].splice(i, 1); touch(true); renderTab(); }
+function addCol(k, i) { const p = draft[k][i]; p.schema = p.schema || {}; (p.schema.columns ||= []).push({ name: "", dtype: "str", nullable: false }); touch(true); renderTab(); }
+function rmCol(k, i, j) { draft[k][i].schema.columns.splice(j, 1); touch(true); renderTab(); }
 function wire() {
-  document.querySelectorAll("#ibody [data-l]").forEach(el => el.addEventListener("input", () => {
+  $("ib").querySelectorAll("[data-l]").forEach(el => el.addEventListener("input", () => {
     const l = el.dataset.l, i = +el.dataset.i, k = el.dataset.k;
     if (l === "constraints") draft.constraints[i] = el.value; else draft[l][i][k] = el.value;
     if (l === "decisions" && k === "answer") draft[l][i].answered_by = "researcher";
     touch();
   }));
-  document.querySelectorAll("#ibody [data-p]").forEach(el => {
-    const ev = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
-    el.addEventListener(ev, () => {
-      const p = draft[el.dataset.p][+el.dataset.i]; const val = el.type === "checkbox" ? el.checked : el.value;
-      p.schema = p.schema || {};
-      if (el.dataset.c !== undefined) { p.schema.columns[+el.dataset.c][el.dataset.ck] = val; }
+  $("ib").querySelectorAll("[data-p]").forEach(el => {
+    el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", () => {
+      const p = draft[el.dataset.p][+el.dataset.i], val = el.type === "checkbox" ? el.checked : el.value; p.schema = p.schema || {};
+      if (el.dataset.c !== undefined) p.schema.columns[+el.dataset.c][el.dataset.ck] = val;
       else if (el.dataset.s) { if (el.dataset.s === "keys") p.schema.keys = val.split(",").map(x => x.trim()).filter(Boolean); else p.schema[el.dataset.s] = val; }
       else if (el.dataset.f === "base" || el.dataset.f === "item") {
-        const [b, it] = splitType(p.type); const nb = el.dataset.f === "base" ? val : b, ni = el.dataset.f === "item" ? val : it;
+        const [b, it] = splitType(p.type), nb = el.dataset.f === "base" ? val : b, ni = el.dataset.f === "item" ? val : it;
         p.type = ["list", "tuple"].includes(nb) && ni ? `${nb}[${ni}]` : nb;
-        if (el.dataset.f === "base") { p.schema = nb === "dataframe" ? { columns: [] } : {}; touch(); renderTab(); return; }
+        if (el.dataset.f === "base") { p.schema = nb === "dataframe" ? { columns: [] } : {}; touch(true); renderTab(); return; }
       } else p[el.dataset.f] = val;
-      touch();
-      if (el.dataset.f === "from" && val) { const [u, o] = val.split("."); const src = (byId(u)?.spec.outputs || []).find(x => x.name === o); if (src) { p.type = src.type; p.schema = clone(src.schema) || {}; if (!p.name) p.name = o; renderTab(); } }
+      if (el.dataset.f === "from" && val) { const [u, o] = val.split("."); const src = (byId(u)?.spec.outputs || []).find(x => x.name === o); if (src) { p.type = src.type; p.schema = clone(src.schema) || {}; if (!p.name) p.name = o; touch(true); renderTab(); return; } }
+      touch(el.tagName === "SELECT" || el.type === "checkbox");
     });
   });
 }
 
-/* ---------- checks tab ---------- */
+/* ---- checks tab ---- */
+function snippets() {
+  const s = [];
+  for (const o of draft.outputs) { const [b] = splitType(o.type), q = `out['${o.name}']`;
+    if (b === "dataframe") s.push([`${o.name}: not empty`, `len(${q}) > 0`], [`${o.name}: no missing values`, `${q}.notna().all().all()`]);
+    else if (b === "ndarray") s.push([`${o.name}: no NaN/inf`, `bool(np.isfinite(${q}).all())`], [`${o.name}: not all identical`, `len(np.unique(${q}, axis=0)) > 1`]);
+    else if (["list", "tuple"].includes(b)) s.push([`${o.name}: not empty`, `len(${q}) > 0`]); }
+  return s;
+}
 function tabChecks(st) {
-  let h = `<div class="sec ${missing("tests") || missing("test ") ? "missing" : ""}"><h3>Test cases <span class="h">your input → expected output</span></h3>
-    <p class="help">Input is JSON; dataframes can be given as a list of row objects. <span class="key">expect</span> is a Python expression over <span class="key">out</span>, <span class="key">inp</span>, <span class="key">params</span>, <span class="key">np</span>, <span class="key">pd</span>.</p>`;
-  draft.tests.forEach((t, i) => h += `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-l="tests" data-i="${i}" data-k="name" value="${esc(t.name || "")}" placeholder="name"><button class="x" onclick="rm('tests',${i})">×</button></div>
-      <label>Input</label><textarea class="code" rows="2" data-l="tests" data-i="${i}" data-k="input">${esc(typeof t.input === "string" ? t.input : jsonish(t.input))}</textarea>
-      <div class="grid2"><div><label>Param overrides</label><textarea class="code" rows="1" data-l="tests" data-i="${i}" data-k="params">${esc(typeof t.params === "string" ? t.params : jsonish(t.params))}</textarea></div>
-      <div><label>Expected exception (optional)</label><input class="mono" data-l="tests" data-i="${i}" data-k="raises" value="${esc(t.raises || "")}" placeholder="ValueError"></div></div>
-      <label>Expect</label><textarea class="code" rows="2" data-l="tests" data-i="${i}" data-k="expect">${esc(t.expect || "")}</textarea></div>`);
-  h += `<button class="sm" onclick="addRow('tests',{name:'',input:'',expect:''})">＋ test case</button></div>`;
-  h += `<div class="sec ${missing("invariants") || missing("invariant ") ? "missing" : ""}"><h3>Invariants <span class="h">must hold on the real data</span></h3>`;
-  draft.invariants.forEach((v, i) => h += `<div class="card"><div class="ch"><input style="flex:1;font-weight:700" data-l="invariants" data-i="${i}" data-k="name" value="${esc(v.name || "")}" placeholder="name"><button class="x" onclick="rm('invariants',${i})">×</button></div>
-      <textarea class="code" rows="1" style="margin-top:6px" data-l="invariants" data-i="${i}" data-k="expr" placeholder="out['docs']['text'].str.len().min() > 0">${esc(v.expr || "")}</textarea></div>`);
-  h += `<button class="sm" onclick="addRow('invariants',{name:'',expr:''})">＋ invariant</button></div>`;
+  let h = lockNote() + `<div class="sec"><h3>Test cases</h3><p class="hint">Small inputs you make by hand, and what must come out. Inputs are JSON; a dataframe can be a list of row objects. <b>Expect</b> is Python using <code>out</code>, <code>inp</code>, <code>params</code>, <code>np</code>, <code>pd</code>.</p>`;
+  draft.tests.forEach((t, i) => h += `<div class="item"><div class="r"><input style="flex:1;font-weight:700" data-l="tests" data-i="${i}" data-k="name" value="${esc(t.name || "")}" placeholder="what this case checks"><button class="x" onclick="rm('tests',${i})">×</button></div>
+    <label>Input</label><textarea class="mono" rows="2" data-l="tests" data-i="${i}" data-k="input" placeholder='{"docs": [{"id": "1", "text": "a cat"}]}'>${esc(jsonish(t.input))}</textarea>
+    <label>Expect</label><textarea class="mono" rows="2" data-l="tests" data-i="${i}" data-k="expect" placeholder="out['labels'].tolist() == [0, 0, 1]">${esc(t.expect || "")}</textarea>
+    <details><summary class="hint" style="cursor:pointer;margin-top:6px">Param overrides / expected error</summary><div class="g2"><div><label>Params (JSON)</label><input class="mono" data-l="tests" data-i="${i}" data-k="params" value="${esc(jsonish(t.params))}"></div><div><label>Raises</label><input class="mono" data-l="tests" data-i="${i}" data-k="raises" value="${esc(t.raises || "")}" placeholder="ValueError"></div></div></details></div>`);
+  h += `<button class="sm add mk" onclick="addRow('tests',{name:'',input:'',expect:''})">＋ Test case</button></div>
+  <div class="sec"><h3>Invariants</h3><p class="hint">Properties that must hold on the <b>real</b> data, every run.</p>`;
+  const sn = snippets(); if (sn.length && !ro()) h += `<div class="chips">${sn.map(([n, e]) => `<button class="chip mk" onclick='addInv(${JSON.stringify(n)}, ${JSON.stringify(e)})'>＋ ${esc(n)}</button>`).join("")}</div>`;
+  draft.invariants.forEach((v, i) => h += `<div class="item"><div class="r"><input style="flex:1;font-weight:700" data-l="invariants" data-i="${i}" data-k="name" value="${esc(v.name || "")}" placeholder="name"><button class="x" onclick="rm('invariants',${i})">×</button></div>
+    <textarea class="mono" rows="1" style="margin-top:6px" data-l="invariants" data-i="${i}" data-k="expr" placeholder="out['docs']['text'].str.len().min() > 0">${esc(v.expr || "")}</textarea></div>`);
+  h += `<button class="sm add mk" onclick="addRow('invariants',{name:'',expr:''})">＋ Invariant</button></div>`;
   const r = st.result;
-  h += `<div class="sec"><h3>Last run ${r ? `<span class="h">${r.passed ? "all passed" : "failing"} · ${esc(r.at)}</span>` : ""}</h3>`;
-  if (!r) h += `<p class="muted">Not run yet.</p>`;
-  else h += r.checks.map(c => `<details class="check" ${c.passed ? "" : "open"}><summary><span class="pf ${c.passed ? "pass" : "fail"}">${c.passed ? "PASS" : "FAIL"}</span><span style="flex:1">${esc(c.name)}</span><span class="kind">${c.kind} · ${c.seconds}s</span></summary><pre>${esc(c.detail)}</pre></details>`).join("");
-  h += `</div>`;
-  if (r?.preview) h += `<div class="sec"><h3>Real-data output <span class="h">from the last run</span></h3>${previews(r.preview)}</div>`;
+  h += `<div class="sec"><h3>Last run</h3>${r ? `<p class="hint">${r.passed ? "All passed" : "Failing"} · ${esc(r.at)}</p>` + r.checks.map(c => `<details class="check" ${c.passed ? "" : "open"}><summary><span class="pf ${c.passed ? "p" : "f"}">${c.passed ? "PASS" : "FAIL"}</span><span style="flex:1">${esc(c.name)}</span><span class="hint" style="margin:0">${c.kind}</span></summary><pre>${esc(c.detail)}</pre></details>`).join("") : `<p class="hint">Not run yet.</p>`}</div>`;
+  if (r?.preview) h += `<div class="sec"><h3>Real-data output</h3>${previews(r.preview)}</div>`;
   if (st.artifacts.length) h += `<div class="sec arts"><h3>Artifacts</h3>${st.artifacts.map(a => /\.(png|jpe?g|svg|gif|webp)$/i.test(a) ? `<img src="/files/${encodeURI(a)}" title="${esc(a)}">` : `<div><a href="/files/${encodeURI(a)}" target="_blank">${esc(a)}</a></div>`).join("")}</div>`;
-  $("ibody").innerHTML = h;
+  $("ib").innerHTML = h;
+}
+function addInv(n, e) { draft.invariants.push({ name: n, expr: e }); touch(true); renderTab(); }
+
+/* ---- previews ---- */
+function previews(o) { return Object.entries(o || {}).map(([k, p]) => pv(k, p)).join(""); }
+function pv(name, p) {
+  let hd = "", b = "";
+  if (p.kind === "table") { hd = `DataFrame · ${p.shape[0]} × ${p.shape[1]}`;
+    b = `<table class="t"><tr>${p.columns.map(c => `<th>${esc(c)}<small>${esc(p.dtypes[c])}</small></th>`).join("")}</tr>${p.rows.map(r => `<tr>${r.map(v => `<td title="${esc(v)}">${esc(v === null ? "∅" : v)}</td>`).join("")}</tr>`).join("")}</table>${p.shape[0] > p.rows.length ? `<p class="hint" style="margin:6px 0 0">first ${p.rows.length} of ${p.shape[0]} rows</p>` : ""}`; }
+  else if (p.kind === "array") { hd = `ndarray · ${p.dtype} · [${p.shape.join(", ")}]`;
+    b = p.stats ? `<div class="stats">${Object.entries(p.stats).map(([k, v]) => `<span>${k} ${esc(v)}</span>`).join("")}</div>` : "";
+    if (p.counts) { const mx = Math.max(...Object.values(p.counts)); b += Object.entries(p.counts).map(([k, v]) => `<div class="hbar"><span>${esc(k)}</span><i style="width:${100 * v / mx}%"></i><span>${v}</span></div>`).join(""); }
+    else if (Array.isArray(p.head)) b += `<table class="t">${(Array.isArray(p.head[0]) ? p.head : [p.head]).map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table>`; }
+  else if (p.kind === "list") { hd = `${esc(p.type)} · ${p.len} items`; b = `<table class="t">${p.head.map((v, i) => `<tr><td style="width:30px;color:var(--faint)">${i}</td><td>${esc(typeof v === "object" ? JSON.stringify(v) : v)}</td></tr>`).join("")}</table>`; }
+  else if (p.kind === "dict") { hd = `dict · ${p.keys.length} keys`; b = `<pre>${esc(JSON.stringify(p.items, null, 2))}</pre>`; }
+  else { hd = esc(p.type || "value"); b = `<pre>${esc(p.repr)}</pre>`; }
+  return `<div class="pv"><div class="pvh">${esc(name)}<span>${hd}</span></div><div class="pvb">${b}</div></div>`;
 }
 
-/* ---------- previews ---------- */
-function previews(obj) { return Object.entries(obj || {}).map(([k, p]) => previewHtml(k, p)).join(""); }
-function previewHtml(name, p) {
-  let head = "", body = "";
-  if (p.kind === "table") {
-    head = `DataFrame · ${p.shape[0]} × ${p.shape[1]}`;
-    body = `<table class="t"><tr>${p.columns.map(c => `<th>${esc(c)}<small>${esc(p.dtypes[c])}</small></th>`).join("")}</tr>${p.rows.map(r => `<tr>${r.map(v => `<td title="${esc(v)}">${esc(v === null ? "∅" : v)}</td>`).join("")}</tr>`).join("")}</table>${p.shape[0] > p.rows.length ? `<div class="help" style="margin-top:6px">showing ${p.rows.length} of ${p.shape[0]} rows</div>` : ""}`;
-  } else if (p.kind === "array") {
-    head = `ndarray · ${p.dtype} · [${p.shape.join(", ")}]`;
-    body = p.stats ? `<div class="stats">${Object.entries(p.stats).map(([k, v]) => `<span>${k} ${esc(v)}</span>`).join("")}</div>` : "";
-    if (p.counts) { const mx = Math.max(...Object.values(p.counts)); body += Object.entries(p.counts).map(([k, v]) => `<div class="hbar"><span>${esc(k)}</span><i style="width:${100 * v / mx}%"></i><span>${v}</span></div>`).join(""); }
-    else if (Array.isArray(p.head)) body += `<table class="t">${(Array.isArray(p.head[0]) ? p.head : [p.head]).map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table>`;
-  } else if (p.kind === "list") {
-    head = `${esc(p.type)} · ${p.len} items`;
-    body = `<table class="t">${p.head.map((v, i) => `<tr><td class="muted" style="width:30px">${i}</td><td>${esc(typeof v === "object" ? JSON.stringify(v) : v)}</td></tr>`).join("")}</table>`;
-  } else if (p.kind === "dict") { head = `dict · ${p.keys.length} keys`; body = `<pre>${esc(JSON.stringify(p.items, null, 2))}</pre>`; }
-  else { head = esc(p.type || "value"); body = `<pre>${esc(p.repr)}</pre>`; }
-  return `<div class="pv"><div class="pvh">${esc(name)} <span class="kind">${head}</span></div><div class="pvb">${body}</div></div>`;
-}
-
-/* ---------- try it tab ---------- */
+/* ---- try it ---- */
 function skeleton(st) {
-  const t = (st.spec.tests || []).find(t => t.input && typeof t.input === "object" && Object.keys(t.input).length);
-  if (t) return JSON.stringify(t.input, null, 2);
-  const o = {};
-  for (const i of st.spec.inputs || []) {
-    const [b, inner] = splitType(i.type), sc = i.schema || {};
-    o[i.name] = b === "dataframe" ? [Object.fromEntries((sc.columns || []).map(c => [c.name, c.dtype === "int" ? 0 : c.dtype === "float" ? 0.0 : ""]))]
-      : b === "ndarray" ? [[0.1, 0.2], [0.3, 0.4]] : ["list", "tuple"].includes(b) ? (inner === "str" ? ["example"] : [1, 2]) : b === "dict" ? {} : null;
-  }
+  const t = (st.spec.tests || []).find(t => t.input && typeof t.input === "object" && Object.keys(t.input).length); if (t) return JSON.stringify(t.input, null, 2);
+  const o = {}; for (const i of st.spec.inputs || []) { const [b, inner] = splitType(i.type), sc = i.schema || {};
+    o[i.name] = b === "dataframe" ? [Object.fromEntries((sc.columns || []).map(c => [c.name, c.dtype === "int" ? 0 : c.dtype === "float" ? 0.0 : ""]))] : b === "ndarray" ? [[0.1, 0.2], [0.3, 0.4]] : ["list", "tuple"].includes(b) ? (inner === "str" ? ["example"] : [1, 2]) : b === "dict" ? {} : null; }
   return JSON.stringify(o, null, 2);
 }
 function tabTry(st) {
   const ts = tryState[st.id] ||= { mode: "custom", input: skeleton(st), params: "", res: null, running: false };
   const can = st.files_exist.length > 0;
-  let h = `<p class="help">Run this box yourself and inspect what comes out. Nothing here locks the box or counts as an attempt.</p>`;
-  if (!can) h += `<div class="problems"><b>No code yet.</b> The agent implements this box after you approve it. Then you can try it here.</div>`;
-  h += `<div class="sec" style="margin-top:12px"><div class="seg"><button class="${ts.mode === "custom" ? "on" : ""}" onclick="tryMode('custom')">My input</button><button class="${ts.mode === "real" ? "on" : ""}" onclick="tryMode('real')">Real upstream data</button></div>`;
-  if (ts.mode === "custom") h += `<label>Input (JSON)</label><textarea id="try-in" class="code big">${esc(ts.input)}</textarea>`;
-  else h += `<p class="help" style="margin-top:8px">Uses the actual outputs of the upstream boxes${st.deps.length ? ` (${st.deps.map(esc).join(", ")})` : ""}.</p>`;
-  h += `<label>Param overrides (JSON, optional)</label><input id="try-params" class="mono" value="${esc(ts.params)}" placeholder='{"n_clusters": 5}'>
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="dark" ${can && !ts.running ? "" : "disabled"} onclick="runTry()">${ts.running ? "Running…" : "▶ Run"}</button></div></div>`;
+  let h = `<div class="tryzone"><p class="hint">Run this box yourself and look at what comes out. Trying never locks anything or uses up attempts.</p>`;
+  if (!can) h += `<div class="bad"><b>Nothing to run yet.</b> Once the box is approved and built, you can try it here.</div>`;
+  h += `<div style="margin-top:10px" class="seg"><button class="${ts.mode === "custom" ? "on" : ""}" onclick="tryMode('custom')">My input</button><button class="${ts.mode === "real" ? "on" : ""}" onclick="tryMode('real')">Real upstream data</button></div>`;
+  h += ts.mode === "custom" ? `<label>Input (JSON)</label><textarea id="try-in" class="mono big">${esc(ts.input)}</textarea>` : `<p class="hint" style="margin-top:8px">Runs on what the upstream boxes${st.deps.length ? ` (${st.deps.map(esc).join(", ")})` : ""} actually produce.</p>`;
+  h += `<label>Param overrides (optional)</label><input id="try-params" class="mono" value="${esc(ts.params)}" placeholder='{"n_clusters": 5}'>
+    <div style="margin-top:10px"><button class="primary" ${can && !ts.running ? "" : "disabled"} onclick="runTry()">${ts.running ? "Running…" : "▶ Run"}</button></div>`;
   const r = ts.res;
-  if (r) {
-    if (r.error) h += `<div class="problems"><b>${esc(r.error)}</b>${r.trace ? `<pre>${esc(r.trace)}</pre>` : ""}</div>`;
-    else {
-      h += r.ok ? `<div class="okbox">✓ Contract satisfied · ${r.seconds}s</div>` : `<div class="problems"><b>Contract violated</b><ul>${r.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`;
+  if (r) { if (r.error) h += `<div class="bad"><b>${esc(r.error)}</b>${r.trace ? `<pre>${esc(r.trace)}</pre>` : ""}</div>`;
+    else { h += r.ok ? `<div class="good">✓ Matches the contract · ${r.seconds}s</div>` : `<div class="bad"><b>Breaks the contract</b><ul style="margin:6px 0 0;padding-left:18px">${r.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`;
       h += `<div class="sec" style="margin-top:14px"><h3>Output</h3>${previews(r.outputs)}</div>`;
-      h += `<details class="sec"><summary class="muted" style="cursor:pointer;font-weight:600">Input as the box saw it</summary>${previews(r.inputs)}</details>`;
-      if (ts.mode === "custom") h += `<div class="sec card"><h3>Save as a test case</h3><p class="help">Write what <i>should</i> be true about this output. The box must keep satisfying it.</p>
-        <input id="tt-name" placeholder="test name"><label>Expect</label><textarea id="tt-expect" class="code" rows="2" placeholder="out['labels'].tolist() == [0, 0, 1]"></textarea>
-        <div style="margin-top:8px"><button class="sm dark" onclick="saveTryTest()">Add test</button></div></div>`;
-    }
-  }
-  $("ibody").innerHTML = h;
+      if (ts.mode === "custom" && !ro()) h += `<div class="item"><b style="font-size:13px">Keep this as a test case?</b><p class="hint">Write what should always be true about this output.</p><input id="tt-name" placeholder="test name"><textarea id="tt-expect" class="mono" rows="2" style="margin-top:6px" placeholder="out['labels'].tolist() == [0, 0, 1]"></textarea><div style="margin-top:8px"><button class="sm primary" onclick="saveTryTest()">Add test</button></div></div>`; } }
+  $("ib").innerHTML = h + `</div>`;
   $("try-in")?.addEventListener("input", e => ts.input = e.target.value);
   $("try-params")?.addEventListener("input", e => ts.params = e.target.value);
 }
 function tryMode(m) { tryState[sel].mode = m; renderTab(); }
 async function runTry() {
   const ts = tryState[sel]; let input = null, params = {};
-  try { if (ts.mode === "custom") input = JSON.parse(ts.input || "{}"); if (ts.params.trim()) params = JSON.parse(ts.params); }
-  catch (e) { return toast("Invalid JSON: " + e.message, true); }
-  ts.running = true; renderTab();
-  try { ts.res = await api(`/api/try/${sel}`, { mode: ts.mode, input, params }); } catch (e) { ts.res = { error: e.message }; }
-  ts.running = false; if (tab === "try") renderTab();
+  try { if (ts.mode === "custom") input = JSON.parse(ts.input || "{}"); if (ts.params.trim()) params = JSON.parse(ts.params); } catch (e) { return toast("Invalid JSON: " + e.message, true); }
+  ts.running = true; renderTab(); const id = sel;
+  try { ts.res = await api(`/api/try/${id}`, { mode: ts.mode, input, params }); } catch (e) { ts.res = { error: e.message }; }
+  ts.running = false; if (tab === "try" && sel === id) renderTab();
 }
 async function saveTryTest() {
-  const ts = tryState[sel], expect = $("tt-expect").value.trim(); if (!expect) return toast("Write an expect expression first.", true);
-  if (dirty) return toast("Save or discard your other edits first.", true);
-  const st = byId(sel);
-  if (st.locked_at && !confirm("This box is verified. Adding a test changes its spec, so it goes stale and needs re-approval. Continue?")) return;
-  try { await api(`/api/add_test/${sel}`, { name: $("tt-name").value.trim() || "tried case", input: JSON.parse(ts.input || "{}"), params: ts.params.trim() ? JSON.parse(ts.params) : undefined, expect }); toast("Test case added"); await load(); }
-  catch (e) { toast(e.message, true); }
+  const ts = tryState[sel], expect = $("tt-expect").value.trim(); if (!expect) return toast("Write the expect expression first.", true);
+  flushSave();
+  try { await api(`/api/add_test/${sel}`, { name: $("tt-name").value.trim() || "tried case", input: JSON.parse(ts.input || "{}"), params: ts.params.trim() ? JSON.parse(ts.params) : undefined, expect }); toast("Test case added"); await load(true); renderInspector(true); } catch (e) { toast(e.message, true); }
 }
 
-/* ---------- box tab ---------- */
-function tabBox(st) {
-  const a = st.status === "archived";
-  let h = `<div class="sec"><h3>Grow the flow</h3><div class="nextopts" style="margin-top:0">
-    <button ${a ? "disabled" : ""} onclick="boxAct('insert_before')">＋ Insert a box before<span>A new upstream step; this box's inputs are rewired through it.</span></button>
-    <button ${a ? "disabled" : ""} onclick="boxAct('insert_after')">＋ Add a box after<span>A new box that reads this box's outputs.</span></button>
-    <button ${a ? "disabled" : ""} onclick="boxAct('variant')">⑂ Try an alternative approach<span>Sibling box with the same contract and checks and a blank approach for you.</span></button>
-    ${st.spec.variant_of ? `<button class="pink" onclick="boxAct('promote')">Use this instead of ${esc(st.spec.variant_of)}<span style="color:#fff">Downstream boxes read from this one; the original is archived.</span></button>` : ""}
-  </div></div>
-  <div class="sec"><h3>Files <span class="h">code owned by this box, verified and locked together</span></h3><input id="f-files" class="mono" value="${esc((draft.files || st.files).join(", "))}"></div>
-  <div class="sec"><h3>Remove</h3><div style="display:flex;gap:8px">${a ? `<button onclick="boxAct('restore')">Restore</button>` : `<button onclick="boxAct('archive')">Archive</button>`}${st.locked_at ? "" : `<button class="danger" onclick="boxAct('delete')">Delete</button>`}</div></div>
-  <p class="help">approved ${esc(st.approved_at || "never")}${st.locked_at ? ` · locked ${esc(st.locked_at)}` : ""}</p>`;
-  $("ibody").innerHTML = h;
-  bind("f-files", v => draft.files = v.split(",").map(x => x.trim()).filter(Boolean));
+/* ---- box menu & actions ---- */
+function boxMenu(ev) {
+  const st = byId(sel), a = st.status === "archived";
+  showPop(ev, `<div class="ph">Grow the flow</div>
+    <button ${a ? "disabled" : ""} onclick="boxAct('insert_before')">Insert a box before<small>Inputs get rewired through it</small></button>
+    <button ${a ? "disabled" : ""} onclick="boxAct('insert_after')">Add a box after<small>Reads this box's outputs</small></button>
+    <button ${a ? "disabled" : ""} onclick="boxAct('variant')">Try an alternative<small>Same contract, your new method</small></button>
+    ${st.spec.variant_of ? `<button onclick="boxAct('promote')">Use instead of ${esc(st.spec.variant_of)}<small>Rewires downstream, archives the original</small></button>` : ""}
+    <div class="ph">Remove</div>${a ? `<button onclick="boxAct('restore')">Restore</button>` : `<button onclick="boxAct('archive')">Archive</button>`}${st.locked_at ? "" : `<button class="danger" onclick="boxAct('delete')">Delete</button>`}`);
+  $("pop").style.left = (innerWidth - 470) + "px";
 }
 async function boxAct(a) {
+  hidePop(); flushSave();
   const st = byId(sel), name = st.spec.title || st.id, body = {};
-  const ask = { insert_before: `Name the new box that runs before “${name}”:`, insert_after: `Name the new box that reads from “${name}”:` };
+  const ask = { insert_before: `Name the new step before “${name}”:`, insert_after: `Name the new step after “${name}”:` };
   if (ask[a]) { const t = prompt(ask[a]); if (!t) return; body.title = t; }
-  const conf = { variant: `Create an alternative to “${name}”? Same inputs, outputs and checks; you write the new approach.`,
-    promote: `Use “${name}” instead of “${st.spec.variant_of}”? Downstream boxes will read from this one and the original is archived.`,
-    archive: `Archive “${name}”?`, delete: `Delete “${name}” permanently?` };
+  const conf = { promote: `Use “${name}” instead of “${st.spec.variant_of}”? Downstream boxes will read from this one, and the original is archived.`, delete: `Delete “${name}” permanently?` };
   if (conf[a] && !confirm(conf[a])) return;
-  if (st.locked_at && a === "insert_before" && !confirm("This box is verified. Rewiring its inputs makes it stale and it needs re-approval. Continue?")) return;
+  if (LOCKED.includes(st.status) && a === "insert_before" && !confirm("This box is verified. Rewiring its inputs means it needs re-approval. Continue?")) return;
   try {
     const r = await api(`/api/${a}/${sel}`, body);
-    if (r.id) {
-      const p = P(st); await api(`/api/move/${r.id}`, a === "insert_before" ? { x: p.x - 330, y: p.y + 40 } : { x: p.x + (a === "variant" ? 0 : 340), y: p.y + (a === "variant" ? nodeH(st) + 40 : 40) });
-      dirty = false; await load(); select(r.id, "spec"); toast(a === "variant" ? "Alternative created. Write its approach." : "Box added. Fill in its spec.");
-    } else if (a === "delete") { dirty = false; sel = null; await load(); renderInspector(true); toast("Deleted"); }
-    else { await load(); renderInspector(true); toast("Done"); }
+    if (r.id) { const p = P(st); await api(`/api/move/${r.id}`, a === "insert_before" ? { x: p.x - 320, y: p.y + 60 } : a === "variant" ? { x: p.x, y: p.y + boxH(st) + 50 } : { x: p.x + 320, y: p.y + 60 });
+      await load(true); openBox(r.id, "spec"); toast(a === "variant" ? "Alternative created. Write its approach." : "Box added. Give it a spec."); }
+    else if (a === "delete") { sel = null; $("insp").classList.remove("show"); await load(true); toast("Deleted"); }
+    else { await load(true); renderInspector(true); toast({ archive: "Archived", restore: "Restored", promote: "Switched" }[a] || "Done"); }
   } catch (e) { toast(e.message, true); }
 }
-
-/* ---------- save / gate actions ---------- */
-async function save() {
-  const st = byId(sel); const body = clone(draft); delete body.ui;
-  if (st.locked_at) { if (!confirm("This box is verified and locked. Changing its spec makes it stale, so it needs re-approval and new checks. Continue?")) return; body._confirm_locked = true; }
-  try { await api(`/api/stage/${sel}`, body); dirty = false; toast("Saved"); await load(); renderInspector(true); } catch (e) { toast(e.message, true); }
+async function approve(andBuild) {
+  flushSave(); const st = byId(sel);
+  const relayed = st.decisions.filter(d => String(d.answered_by || "").startsWith("agent") && !String(d.answered_by).includes("confirmed"));
+  if (relayed.length && !confirm(`The agent recorded these answers from chat. Are they yours?\n\n` + relayed.map(d => `• ${d.key || d.question}: ${JSON.stringify(d.answer)}`).join("\n"))) return;
+  try { await api(`/api/approve/${sel}`, {}); await load(true); toast("Approved"); if (andBuild) build(); } catch (e) { toast(e.message, true); }
 }
-function discard() { renderInspector(true); }
-async function act(a) {
-  const st = byId(sel);
-  if (a === "approve") {
-    const relayed = st.decisions.filter(d => String(d.answered_by || "").startsWith("agent") && !String(d.answered_by).includes("confirmed"));
-    if (!confirm(`Approve “${st.spec.title}”? The agent will implement exactly this spec.` + (relayed.length ? `\n\nThe agent recorded these answers from chat. Confirm they're yours:\n` + relayed.map(d => `• ${d.key || d.question}: ${JSON.stringify(d.answer)}`).join("\n") : ""))) return;
+async function build(agent) { agent ||= S.policy.agent; try { await api(`/api/agent/${sel}`, { agent }); toast(`${AGENT_LABEL(agent)} is building…`); pollAgent(); } catch (e) { toast(e.message, true); } }
+async function stopAgent() { try { await api("/api/agent_stop", {}); } catch (e) { toast(e.message, true); } }
+async function pollAgent() {
+  if (pollAgent.on) return; pollAgent.on = true;
+  while (true) {
+    try { AG = await api("/api/agent"); } catch { break; }
+    $("agentpill").classList.toggle("on", !!AG.running); $("agenttxt").textContent = `${AGENT_LABEL(AG.agent)} · ${byId(AG.sid)?.spec.title || AG.sid}`;
+    if (sel && sel === AG.sid) renderNext(); if (!drag && !editingNote) render();
+    if (!AG.running) { await load(true); if (sel) renderInspector(true); break; }
+    await new Promise(r => setTimeout(r, 1200));
   }
-  if (a === "unlock" && !confirm(`Unlock “${st.spec.title}”? The agent will be able to edit its code again, and downstream boxes go stale.`)) return;
-  try {
-    if (a === "verify") toast("Running checks…");
-    const r = await api(`/api/${a}/${sel}`, {});
-    if (a === "verify") { toast(r.passed ? "All checks passed. Box locked." : "Some checks failed.", !r.passed); tab = "checks"; }
-    else toast({ approve: "Approved. The agent can implement it now.", unlock: "Unlocked", retry: "More attempts granted" }[a]);
-    await load(); renderInspector(true);
-  } catch (e) { toast(e.message, true); }
+  pollAgent.on = false;
+}
+async function act(a) {
+  const st = byId(sel); flushSave();
+  if (a === "unlock" && !confirm(`Unlock “${st.spec.title}”? The agent will be able to change its code again, and downstream boxes will need re-checking.`)) return;
+  try { if (a === "verify") toast("Running checks…"); const r = await api(`/api/${a}/${sel}`, {});
+    if (a === "verify") { toast(r.passed ? "All checks pass. Locked." : "Some checks failed.", !r.passed); tab = "checks"; } else toast({ unlock: "Unlocked", retry: "More attempts granted" }[a]);
+    await load(true); renderInspector(true); } catch (e) { toast(e.message, true); }
 }
 
-/* ---------- rules ---------- */
-function openRules() { const p = S.policy; $("r-max").value = p.max_attempts; $("r-tests").value = p.min_tests; $("r-inv").value = p.min_invariants; $("r-con").value = p.min_constraints; $("r-strict").checked = !!p.strict_contracts; $("r-opts").checked = !!p.agent_options; $("rules").showModal(); }
+/* ---- pipeline + rules ---- */
+$("pname").addEventListener("change", async e => { try { await api("/api/pipeline", { name: e.target.value }); toast("Renamed"); } catch (err) { toast(err.message, true); } });
+$("pname").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+function openRules() { const p = S.policy, std = ["claude", "codex"].includes(p.agent);
+  $("r-agent").value = std ? p.agent : "custom"; $("r-agent-cmd").value = std ? "" : p.agent; $("r-agent-cmd").style.display = std ? "none" : "";
+  $("r-max").value = p.max_attempts; $("r-tests").value = p.min_tests; $("r-inv").value = p.min_invariants; $("r-con").value = p.min_constraints; $("r-strict").checked = !!p.strict_contracts; $("r-opts").checked = !!p.agent_options; $("rules").showModal(); }
+$("r-agent").addEventListener("change", e => $("r-agent-cmd").style.display = e.target.value === "custom" ? "" : "none");
 async function saveRules() {
-  const policy = { max_attempts: +$("r-max").value, min_tests: +$("r-tests").value, min_invariants: +$("r-inv").value, min_constraints: +$("r-con").value, strict_contracts: $("r-strict").checked, agent_options: $("r-opts").checked };
-  try { await api("/api/pipeline", { policy }); $("rules").close(); toast("Rules saved"); await load(); } catch (e) { toast(e.message, true); }
+  const agent = $("r-agent").value === "custom" ? ($("r-agent-cmd").value.trim() || "claude") : $("r-agent").value;
+  const policy = { agent, max_attempts: +$("r-max").value, min_tests: +$("r-tests").value, min_invariants: +$("r-inv").value, min_constraints: +$("r-con").value, strict_contracts: $("r-strict").checked, agent_options: $("r-opts").checked };
+  try { await api("/api/pipeline", { policy }); $("rules").close(); toast("Rules saved"); await load(true); } catch (e) { toast(e.message, true); }
 }
 
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.querySelector("dialog[open]") && !e.target.closest("input,textarea")) select(null); });
-window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
-load().then(() => { const m = location.hash.match(/^#box=(\w+)(?:&tab=(\w+))?/); if (m && byId(m[1])) select(m[1], m[2] || "spec"); if (!localStorage.getItem("arx.view.fitted") || location.hash.includes("fit")) { fit(); localStorage.setItem("arx.view.fitted", "1"); } });
-setInterval(() => { if (document.visibilityState === "visible" && !drag) load(true); }, 4000);
+window.addEventListener("beforeunload", () => flushSave());
+setTool("select");
+load().then(() => { const m = location.hash.match(/box=(\w+)(?:&tab=(\w+))?/); if (m && byId(m[1])) openBox(m[1], m[2] || "spec"); if (!localStorage.getItem("arx.v2.fit") || location.hash.includes("fit")) { fit(); localStorage.setItem("arx.v2.fit", "1"); } if (location.hash.includes("help")) help.showModal(); });
+setInterval(() => { if (document.visibilityState === "visible" && !drag && !editingNote) load(true); }, 3000);
 </script>
 </body>
 </html>
